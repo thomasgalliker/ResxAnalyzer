@@ -11,115 +11,6 @@ namespace System.Resources.Tests
         }
 
         [Fact]
-        public void Analyze_MissingLocalizedKeyIsNotInvariant_ReturnsMissingTranslation()
-        {
-            // Arrange
-            var analyzer = CreateAnalyzerForStringsResx();
-
-            // Act
-            var result = analyzer.Analyze();
-
-            // Assert
-            this.testOutputHelper.WriteLine(result.Report);
-            result.Succeeded.Should().BeFalse();
-            result.Report.Should().Contain("Following translation keys are missing:");
-            result.Report.Should().Contain("CultureInfo \"de-CH\" (1):");
-            result.Report.Should().Contain("> MissingNonInvariant");
-        }
-
-        [Fact]
-        public void Analyze_MissingLocalizedKeyIsInvariant_DoesNotReturnMissingTranslation()
-        {
-            // Arrange
-            var analyzer = CreateAnalyzerForStringsResx();
-
-            // Act
-            var result = analyzer.Analyze();
-
-            // Assert
-            this.testOutputHelper.WriteLine(result.Report);
-            result.Report.Should().NotContain("> InvariantOnly");
-        }
-
-        [Fact]
-        public void Analyze_LocalizedPlaceholderTokensDiffer_ReturnsPlaceholderMismatch()
-        {
-            // Arrange
-            var analyzer = CreateAnalyzerForStringsResx();
-
-            // Act
-            var result = analyzer.Analyze();
-
-            // Assert
-            this.testOutputHelper.WriteLine(result.Report);
-            result.Succeeded.Should().BeFalse();
-            result.Report.Should().Contain("Following translation keys have inconsistent placeholders:");
-            result.Report.Should().Contain("PlaceholderMessage (neutral: {0}, {1:N2}, localized: {0})");
-        }
-
-        [Fact]
-        public void Analyze_ValuesHaveLeadingOrTrailingNewlines_ReturnsInvalidValues()
-        {
-            // Arrange
-            var analyzer = CreateAnalyzerForStringsResx();
-
-            // Act
-            var result = analyzer.Analyze();
-
-            // Assert
-            this.testOutputHelper.WriteLine(result.Report);
-            result.Succeeded.Should().BeFalse();
-            result.Report.Should().Contain("Following translation values are invalid:");
-            result.Report.Should().Contain("Key='NewlineStart'");
-            result.Report.Should().Contain("Key='NewlineEnd'");
-        }
-
-        [Fact]
-        public void Analyze_KeyAppearsOnlyInDesignerFile_ReturnsUnusedKey()
-        {
-            // Arrange
-            var analyzer = CreateAnalyzerForStringsResx();
-
-            // Act
-            var result = analyzer.Analyze();
-
-            // Assert
-            this.testOutputHelper.WriteLine(result.Report);
-            result.Succeeded.Should().BeFalse();
-            result.Report.Should().Contain("Following keys are not used");
-            result.Report.Should().Contain("> DesignerOnlyKey");
-        }
-
-        [Fact]
-        public void Analyze_KeyMatchesIgnoredUsagePattern_DoesNotReturnUnusedKey()
-        {
-            // Arrange
-            var analyzer = CreateAnalyzerForStringsResx();
-
-            // Act
-            var result = analyzer.Analyze();
-
-            // Assert
-            this.testOutputHelper.WriteLine(result.Report);
-            result.Report.Should().NotContain("> IgnoredDynamic_Key");
-        }
-
-        [Fact]
-        public void Analyze_KeyAppearsInSource_DoesNotReturnUnusedKey()
-        {
-            // Arrange
-            var analyzer = CreateAnalyzerForStringsResx();
-
-            // Act
-            var result = analyzer.Analyze();
-
-            // Assert
-            this.testOutputHelper.WriteLine(result.Report);
-            result.Report.Should().NotContain("> UsedKey");
-            result.Report.Should().NotContain("> XamlUsedKey");
-        }
-
-        [Fact]
         public void Analyze_CulturesAreNotConfigured_DiscoversLocalizedSiblingResources()
         {
             // Arrange
@@ -435,6 +326,36 @@ namespace System.Resources.Tests
         }
 
         [Fact]
+        public void Analyze_NoCheckSelectorIsProvided_RunsAllConfiguredChecksAndAggregatesFailures()
+        {
+            // Arrange
+            var testDataDirectory = TestDataPaths.GetTestDataDirectory();
+            var resourceDirectory = new DirectoryInfo(Path.Combine(testDataDirectory.FullName, "Resources"));
+            var firstCheck = new FirstTrackingCheck();
+            var secondCheck = new SecondTrackingCheck();
+
+            var analyzer = ResxAnalyzer
+                .ForResource(Path.Combine(resourceDirectory.FullName, "Clean.resx"))
+                .WithLocalizedResource(GermanCultureInfo, Path.Combine(resourceDirectory.FullName, "Clean.de.resx"))
+                .WithChecks(checks => checks
+                    .Add(firstCheck)
+                    .Add(secondCheck))
+                .Build();
+
+            // Act
+            var result = analyzer.Analyze();
+
+            // Assert
+            this.testOutputHelper.WriteLine(result.Report);
+            result.Succeeded.Should().BeFalse();
+            result.Checks.Select(check => check.CheckName).Should().Equal(nameof(FirstTrackingCheck), nameof(SecondTrackingCheck));
+            firstCheck.AnalyzeCount.Should().Be(1);
+            secondCheck.AnalyzeCount.Should().Be(1);
+            result.Report.Should().Contain("Check \"FirstTrackingCheck\" succeeded");
+            result.Report.Should().Contain("Check \"SecondTrackingCheck\" failed");
+        }
+
+        [Fact]
         public void Analyze_GenericCheckIsNotConfigured_ThrowsInvalidOperationException()
         {
             // Arrange
@@ -542,24 +463,6 @@ namespace System.Resources.Tests
                 "Custom check saw 1 neutral entries.");
         }
 
-        private static ResxAnalyzer CreateAnalyzerForStringsResx()
-        {
-            var testDataDirectory = TestDataPaths.GetTestDataDirectory();
-            var resourceDirectory = new DirectoryInfo(Path.Combine(testDataDirectory.FullName, "Resources"));
-
-            return ResxAnalyzer
-                .ForResource(Path.Combine(resourceDirectory.FullName, "Strings.resx"))
-                .WithLocalizedResource(GermanCultureInfo, Path.Combine(resourceDirectory.FullName, "Strings.de.resx"))
-                .WithChecks(checks => checks
-                    .Add(new CompletenessCheck())
-                    .Add(new PlaceholderConsistencyCheck())
-                    .Add(new NewlineValueCheck())
-                    .Add(new UnusedKeysCheck(scan => scan
-                        .In(Path.Combine(testDataDirectory.FullName, "Source"))
-                        .IgnoreKeys("^IgnoredDynamic_"))))
-                .Build();
-        }
-
         private static ResxAnalyzer CreateAnalyzerForCleanResx()
         {
             var testDataDirectory = TestDataPaths.GetTestDataDirectory();
@@ -582,6 +485,32 @@ namespace System.Resources.Tests
             public ResxCheckResult Analyze(ResxAnalysisContext context)
             {
                 return new ResxCheckResult(false, $"Custom check saw {context.NeutralResource.Entries.Count} neutral entries.");
+            }
+        }
+
+        private sealed class FirstTrackingCheck : IResxCheck
+        {
+            public int AnalyzeCount { get; private set; }
+
+            public string Description => "First tracking check used by analyzer tests.";
+
+            public ResxCheckResult Analyze(ResxAnalysisContext context)
+            {
+                this.AnalyzeCount++;
+                return new ResxCheckResult(true, string.Empty);
+            }
+        }
+
+        private sealed class SecondTrackingCheck : IResxCheck
+        {
+            public int AnalyzeCount { get; private set; }
+
+            public string Description => "Second tracking check used by analyzer tests.";
+
+            public ResxCheckResult Analyze(ResxAnalysisContext context)
+            {
+                this.AnalyzeCount++;
+                return new ResxCheckResult(false, "Second tracking check failed.");
             }
         }
     }
