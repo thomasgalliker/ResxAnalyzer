@@ -3,25 +3,25 @@ namespace System.Resources.Tests.Checks
     public sealed class UnusedCultureFileCheckTests
     {
         private readonly ITestOutputHelper testOutputHelper;
+        private readonly ResxAnalyzer resxAnalyzer;
 
         public UnusedCultureFileCheckTests(ITestOutputHelper testOutputHelper)
         {
             this.testOutputHelper = testOutputHelper;
+            var checksDirectory = TestDataPaths.GetChecksDirectory();
+
+            this.resxAnalyzer = ResxAnalyzer
+                .ForResource(Path.Combine(checksDirectory.FullName, "UnusedCultureFileCheck.resx"))
+                .WithCultures([new CultureInfo("de-CH")])
+                .WithChecks(checks => checks.Add(new UnusedCultureFileCheck()))
+                .Build();
         }
 
         [Fact]
         public void Analyze_UnusedCultureFileCheck_ReturnsDiscoveredCulturesOutsideConfiguredSet()
         {
-            // Arrange
-            var checksDirectory = TestDataPaths.GetChecksDirectory();
-
             // Act
-            var result = ResxAnalyzer
-                .ForResource(Path.Combine(checksDirectory.FullName, "UnusedCultureFileCheck.resx"))
-                .WithCultures([new CultureInfo("de-CH")])
-                .WithChecks(checks => checks.Add(new UnusedCultureFileCheck()))
-                .Build()
-                .Analyze();
+            var result = this.resxAnalyzer.Analyze();
 
             // Assert
             this.testOutputHelper.WriteLine(result.Report);

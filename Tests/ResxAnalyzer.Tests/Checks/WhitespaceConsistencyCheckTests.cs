@@ -3,17 +3,25 @@ namespace System.Resources.Tests.Checks
     public sealed class WhitespaceConsistencyCheckTests
     {
         private readonly ITestOutputHelper testOutputHelper;
+        private readonly ResxAnalyzer resxAnalyzer;
 
         public WhitespaceConsistencyCheckTests(ITestOutputHelper testOutputHelper)
         {
             this.testOutputHelper = testOutputHelper;
+            var checksDirectory = TestDataPaths.GetChecksDirectory();
+
+            this.resxAnalyzer = ResxAnalyzer
+                .ForResource(Path.Combine(checksDirectory.FullName, "WhitespaceConsistencyCheck.resx"))
+                .WithLocalizedResource(new CultureInfo("de-CH"), Path.Combine(checksDirectory.FullName, "WhitespaceConsistencyCheck.de.resx"))
+                .WithChecks(checks => checks.Add(new WhitespaceConsistencyCheck()))
+                .Build();
         }
 
         [Fact]
         public void Analyze_WhitespaceConsistencyCheck_ReturnsWhitespaceMismatches()
         {
             // Act
-            var result = TestDataPaths.AnalyzeCheck("WhitespaceConsistencyCheck", checks => checks.Add(new WhitespaceConsistencyCheck()));
+            var result = this.resxAnalyzer.Analyze();
 
             // Assert
             this.testOutputHelper.WriteLine(result.Report);

@@ -23,23 +23,5 @@ namespace System.Resources.Tests
         {
             return new DirectoryInfo(Path.Combine(GetTestDataDirectory().FullName, "Resources", "Checks"));
         }
-
-        public static ResxAnalysisResult AnalyzeCheck(string resourceName, Action<ResxChecksBuilder> configureChecks)
-        {
-            var checksDirectory = GetChecksDirectory();
-            var analyzerBuilder = ResxAnalyzer
-                .ForResource(Path.Combine(checksDirectory.FullName, $"{resourceName}.resx"))
-                .WithChecks(configureChecks);
-
-            var localizedResourceFile = Path.Combine(checksDirectory.FullName, $"{resourceName}.de.resx");
-            if (File.Exists(localizedResourceFile))
-            {
-                analyzerBuilder.WithLocalizedResource(new CultureInfo("de-CH"), localizedResourceFile);
-            }
-
-            return analyzerBuilder
-                .Build()
-                .Analyze();
-        }
     }
 }
