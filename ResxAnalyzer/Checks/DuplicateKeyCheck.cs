@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace Superdev.ResxAnalyzer.Checks
+namespace System.Resources.Checks
 {
     /// <summary>
     /// Checks that resource files do not contain duplicate keys.

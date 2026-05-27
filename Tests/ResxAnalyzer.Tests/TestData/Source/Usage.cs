@@ -1,4 +1,4 @@
-﻿namespace Superdev.ResxAnalyzer.Tests.TestData.Source
+namespace System.Resources.Tests.TestData.Source
 {
     public static class Usage
     {

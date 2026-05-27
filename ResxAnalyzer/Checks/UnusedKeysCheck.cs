@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace Superdev.ResxAnalyzer.Checks
+namespace System.Resources.Checks
 {
     /// <summary>
     /// Checks that each resource key appears in configured source files.

@@ -4,4 +4,4 @@ global using System;
 global using System.Collections.Generic;
 global using System.Linq;
 global using System.Text.RegularExpressions;
-global using Superdev.ResxAnalyzer.Checks;
+global using System.Resources.Checks;

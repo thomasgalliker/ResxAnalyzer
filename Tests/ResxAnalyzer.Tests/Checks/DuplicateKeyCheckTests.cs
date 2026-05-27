@@ -1,4 +1,4 @@
-namespace Superdev.ResxAnalyzer.Tests.Checks
+namespace System.Resources.Tests.Checks
 {
     public sealed class DuplicateKeyCheckTests
     {

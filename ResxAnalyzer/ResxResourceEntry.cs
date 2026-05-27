@@ -1,4 +1,4 @@
-namespace Superdev.ResxAnalyzer
+namespace System.Resources
 {
     /// <summary>
     /// Represents one parsed .resx data entry.

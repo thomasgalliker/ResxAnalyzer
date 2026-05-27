@@ -1,4 +1,4 @@
-﻿namespace Superdev.ResxAnalyzer
+namespace System.Resources
 {
     /// <summary>
     /// JSON-serializable configuration for <see cref="ResxAnalyzer"/>.

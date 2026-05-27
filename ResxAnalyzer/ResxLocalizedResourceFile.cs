@@ -1,4 +1,4 @@
-namespace Superdev.ResxAnalyzer
+namespace System.Resources
 {
     /// <summary>
     /// Represents an expected or discovered localized .resx file.

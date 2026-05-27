@@ -1,4 +1,4 @@
-﻿namespace Superdev.ResxAnalyzer.Tests
+namespace System.Resources.Tests
 {
     public class ResxAnalyzerTests
     {

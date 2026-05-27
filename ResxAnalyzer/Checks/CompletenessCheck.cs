@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace Superdev.ResxAnalyzer.Checks
+namespace System.Resources.Checks
 {
     /// <summary>
     /// Checks that every non-invariant resource key exists in every localized resource.

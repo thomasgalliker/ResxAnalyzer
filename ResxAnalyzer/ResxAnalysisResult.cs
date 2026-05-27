@@ -1,6 +1,6 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 
-namespace Superdev.ResxAnalyzer
+namespace System.Resources
 {
     /// <summary>
     /// Contains the outcome and human-readable diagnostics discovered by <see cref="ResxAnalyzer"/>.

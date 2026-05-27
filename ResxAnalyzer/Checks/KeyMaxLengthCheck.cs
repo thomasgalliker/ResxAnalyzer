@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace Superdev.ResxAnalyzer.Checks
+namespace System.Resources.Checks
 {
     /// <summary>
     /// Checks that resource keys do not exceed a configured length.

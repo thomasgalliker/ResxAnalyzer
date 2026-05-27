@@ -1,6 +1,6 @@
-# Superdev.ResxAnalyzer
+# System.Resources
 
-`Superdev.ResxAnalyzer` is a small .NET library for validating `.resx` translation resources. It is designed for unit tests first, but the API also works well for future command-line tools because the options object is JSON serializable.
+`System.Resources` is a small .NET library for validating `.resx` translation resources. It is designed for unit tests first, but the API also works well for future command-line tools because the options object is JSON serializable.
 
 The analyzer returns a simple result:
 
@@ -39,7 +39,7 @@ The recommended test usage is the fluent API with explicit checks:
 
 ```csharp
 using AwesomeAssertions;
-using Superdev.ResxAnalyzer;
+using System.Resources;
 using Xunit;
 using Xunit.Abstractions;
 

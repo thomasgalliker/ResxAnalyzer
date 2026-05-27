@@ -1,4 +1,4 @@
-namespace Superdev.ResxAnalyzer
+namespace System.Resources
 {
     /// <summary>
     /// Contains the outcome of one analyzer check.

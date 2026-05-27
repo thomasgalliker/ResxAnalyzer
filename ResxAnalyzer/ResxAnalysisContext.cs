@@ -1,4 +1,4 @@
-namespace Superdev.ResxAnalyzer
+namespace System.Resources
 {
     /// <summary>
     /// Provides parsed resources and helper services to analyzer checks.

@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace Superdev.ResxAnalyzer.Checks
+namespace System.Resources.Checks
 {
     /// <summary>
     /// Checks that localized resources do not contain keys missing from neutral resources.

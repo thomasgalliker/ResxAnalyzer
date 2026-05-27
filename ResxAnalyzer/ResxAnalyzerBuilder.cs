@@ -1,4 +1,4 @@
-﻿namespace Superdev.ResxAnalyzer
+namespace System.Resources
 {
     /// <summary>
     /// Fluent builder for configuring and running <see cref="ResxAnalyzer"/>.

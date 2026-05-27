@@ -1,4 +1,4 @@
-namespace Superdev.ResxAnalyzer.Checks
+namespace System.Resources.Checks
 {
     /// <summary>
     /// Fluent builder for configuring <see cref="UnusedKeysCheck"/>.

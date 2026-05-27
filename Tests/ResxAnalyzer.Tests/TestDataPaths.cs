@@ -1,17 +1,22 @@
-namespace Superdev.ResxAnalyzer.Tests
+namespace System.Resources.Tests
 {
     internal static class TestDataPaths
     {
         public static DirectoryInfo GetTestDataDirectory()
         {
             var directory = new DirectoryInfo(AppContext.BaseDirectory);
-            while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "ResxAnalyzer.sln")))
+            while (directory is not null)
             {
+                var testDataDirectory = new DirectoryInfo(Path.Combine(directory.FullName, "Tests", "ResxAnalyzer.Tests", "TestData"));
+                if (testDataDirectory.Exists)
+                {
+                    return testDataDirectory;
+                }
+
                 directory = directory.Parent;
             }
 
-            directory.Should().NotBeNull("the repository root should contain the ResxAnalyzer solution file");
-            return new DirectoryInfo(Path.Combine(directory.FullName, "Tests", "ResxAnalyzer.Tests", "TestData"));
+            throw new DirectoryNotFoundException("Could not find the test data directory.");
         }
 
         public static DirectoryInfo GetChecksDirectory()

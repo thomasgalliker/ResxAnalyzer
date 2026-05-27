@@ -5,4 +5,4 @@ global using Xunit;
 global using Xunit.Abstractions;
 global using System.IO;
 global using System;
-global using Superdev.ResxAnalyzer.Checks;
+global using System.Resources.Checks;
