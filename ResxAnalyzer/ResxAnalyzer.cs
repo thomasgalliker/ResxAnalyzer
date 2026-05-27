@@ -54,10 +54,96 @@ namespace System.Resources
         /// <returns>The complete analysis result.</returns>
         public ResxAnalysisResult Analyze()
         {
+            return this.Analyze(this.checks);
+        }
+
+        /// <summary>
+        /// Runs the configured analysis with the configured check of the specified type.
+        /// </summary>
+        /// <typeparam name="TCheck">The type of the configured check to run.</typeparam>
+        /// <returns>The complete analysis result.</returns>
+        public ResxAnalysisResult Analyze<TCheck>()
+            where TCheck : IResxCheck
+        {
+            return this.Analyze(typeof(TCheck));
+        }
+
+        /// <summary>
+        /// Runs the configured analysis with the configured check of the specified type.
+        /// </summary>
+        /// <param name="checkType">The type of the configured check to run.</param>
+        /// <returns>The complete analysis result.</returns>
+        public ResxAnalysisResult Analyze(Type checkType)
+        {
+            if (checkType is null)
+            {
+                throw new ArgumentNullException(nameof(checkType));
+            }
+
+            return this.Analyze(new[] { checkType });
+        }
+
+        /// <summary>
+        /// Runs the configured analysis with the configured checks of the specified types.
+        /// </summary>
+        /// <param name="checkTypes">The types of the configured checks to run.</param>
+        /// <returns>The complete analysis result.</returns>
+        public ResxAnalysisResult Analyze(params Type[] checkTypes)
+        {
+            if (checkTypes is null)
+            {
+                throw new ArgumentNullException(nameof(checkTypes));
+            }
+
+            if (checkTypes.Length == 0)
+            {
+                throw new ArgumentException("At least one check type must be specified.", nameof(checkTypes));
+            }
+
+            return this.Analyze(checkTypes.Select(this.GetConfiguredCheck).ToArray());
+        }
+
+        /// <summary>
+        /// Runs the configured analysis with the configured check that has the specified type name.
+        /// </summary>
+        /// <param name="checkName">The configured check type name to run.</param>
+        /// <returns>The complete analysis result.</returns>
+        public ResxAnalysisResult Analyze(string checkName)
+        {
+            if (checkName is null)
+            {
+                throw new ArgumentNullException(nameof(checkName));
+            }
+
+            return this.Analyze(new[] { checkName });
+        }
+
+        /// <summary>
+        /// Runs the configured analysis with the configured checks that have the specified type names.
+        /// </summary>
+        /// <param name="checkNames">The configured check type names to run.</param>
+        /// <returns>The complete analysis result.</returns>
+        public ResxAnalysisResult Analyze(params string[] checkNames)
+        {
+            if (checkNames is null)
+            {
+                throw new ArgumentNullException(nameof(checkNames));
+            }
+
+            if (checkNames.Length == 0)
+            {
+                throw new ArgumentException("At least one check name must be specified.", nameof(checkNames));
+            }
+
+            return this.Analyze(checkNames.Select(this.GetConfiguredCheck).ToArray());
+        }
+
+        private ResxAnalysisResult Analyze(IReadOnlyList<IResxCheck> checksToRun)
+        {
             var groupResults = this.options.ResourceGroups
                 .Select(group => new ResourceGroupAnalysisResult(
                     group.NeutralResourceFile.FullName,
-                    this.checks.Select(check => new CheckRunResult(
+                    checksToRun.Select(check => new CheckRunResult(
                         check,
                         check.Analyze(CreateContext(this.options, group)).WithCheckName(check.GetType().Name))).ToArray()))
                 .ToArray();
@@ -66,6 +152,48 @@ namespace System.Resources
             var report = FormatReport(groupResults);
 
             return new ResxAnalysisResult(succeeded, report, checkResults);
+        }
+
+        private IResxCheck GetConfiguredCheck(Type checkType)
+        {
+            if (checkType is null)
+            {
+                throw new ArgumentNullException(nameof(checkType));
+            }
+
+            if (!typeof(IResxCheck).IsAssignableFrom(checkType))
+            {
+                throw new ArgumentException($"Check type {checkType.Name} must implement {nameof(IResxCheck)}.", nameof(checkType));
+            }
+
+            var check = this.checks.SingleOrDefault(configuredCheck => configuredCheck.GetType() == checkType);
+            if (check is null)
+            {
+                throw new InvalidOperationException($"No configured check of type {checkType.Name} was found.");
+            }
+
+            return check;
+        }
+
+        private IResxCheck GetConfiguredCheck(string checkName)
+        {
+            if (checkName is null)
+            {
+                throw new ArgumentNullException(nameof(checkName));
+            }
+
+            if (string.IsNullOrWhiteSpace(checkName))
+            {
+                throw new ArgumentException("Check name must not be empty.", nameof(checkName));
+            }
+
+            var check = this.checks.SingleOrDefault(configuredCheck => string.Equals(configuredCheck.GetType().Name, checkName, StringComparison.Ordinal));
+            if (check is null)
+            {
+                throw new InvalidOperationException($"No configured check named {checkName} was found.");
+            }
+
+            return check;
         }
 
         private static string FormatReport(IReadOnlyList<ResourceGroupAnalysisResult> groupResults)

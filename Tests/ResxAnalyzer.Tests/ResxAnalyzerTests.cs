@@ -14,7 +14,7 @@ namespace System.Resources.Tests
         public void Analyze_MissingLocalizedKeyIsNotInvariant_ReturnsMissingTranslation()
         {
             // Arrange
-            var analyzer = CreateAnalyzer();
+            var analyzer = CreateAnalyzerForStringsResx();
 
             // Act
             var result = analyzer.Analyze();
@@ -31,7 +31,7 @@ namespace System.Resources.Tests
         public void Analyze_MissingLocalizedKeyIsInvariant_DoesNotReturnMissingTranslation()
         {
             // Arrange
-            var analyzer = CreateAnalyzer();
+            var analyzer = CreateAnalyzerForStringsResx();
 
             // Act
             var result = analyzer.Analyze();
@@ -45,7 +45,7 @@ namespace System.Resources.Tests
         public void Analyze_LocalizedPlaceholderTokensDiffer_ReturnsPlaceholderMismatch()
         {
             // Arrange
-            var analyzer = CreateAnalyzer();
+            var analyzer = CreateAnalyzerForStringsResx();
 
             // Act
             var result = analyzer.Analyze();
@@ -61,7 +61,7 @@ namespace System.Resources.Tests
         public void Analyze_ValuesHaveLeadingOrTrailingNewlines_ReturnsInvalidValues()
         {
             // Arrange
-            var analyzer = CreateAnalyzer();
+            var analyzer = CreateAnalyzerForStringsResx();
 
             // Act
             var result = analyzer.Analyze();
@@ -78,7 +78,7 @@ namespace System.Resources.Tests
         public void Analyze_KeyAppearsOnlyInDesignerFile_ReturnsUnusedKey()
         {
             // Arrange
-            var analyzer = CreateAnalyzer();
+            var analyzer = CreateAnalyzerForStringsResx();
 
             // Act
             var result = analyzer.Analyze();
@@ -94,7 +94,7 @@ namespace System.Resources.Tests
         public void Analyze_KeyMatchesIgnoredUsagePattern_DoesNotReturnUnusedKey()
         {
             // Arrange
-            var analyzer = CreateAnalyzer();
+            var analyzer = CreateAnalyzerForStringsResx();
 
             // Act
             var result = analyzer.Analyze();
@@ -108,7 +108,7 @@ namespace System.Resources.Tests
         public void Analyze_KeyAppearsInSource_DoesNotReturnUnusedKey()
         {
             // Arrange
-            var analyzer = CreateAnalyzer();
+            var analyzer = CreateAnalyzerForStringsResx();
 
             // Act
             var result = analyzer.Analyze();
@@ -329,6 +329,195 @@ namespace System.Resources.Tests
         }
 
         [Fact]
+        public void Analyze_GenericCheckIsConfigured_RunsOnlySelectedCheck()
+        {
+            // Arrange
+            var analyzer = CreateAnalyzerForCleanResx();
+
+            // Act
+            var result = analyzer.Analyze<PlaceholderConsistencyCheck>();
+
+            // Assert
+            this.testOutputHelper.WriteLine(result.Report);
+            result.Succeeded.Should().BeTrue();
+            result.Checks.Should().ContainSingle(check => check.CheckName == nameof(PlaceholderConsistencyCheck));
+            result.Report.Should().Contain("Check \"PlaceholderConsistencyCheck\" succeeded");
+            result.Report.Should().NotContain("CompletenessCheck");
+            result.Report.Should().NotContain("NewlineValueCheck");
+        }
+
+        [Fact]
+        public void Analyze_CheckTypeIsConfigured_RunsOnlySelectedCheck()
+        {
+            // Arrange
+            var analyzer = CreateAnalyzerForCleanResx();
+
+            // Act
+            var result = analyzer.Analyze(typeof(NewlineValueCheck));
+
+            // Assert
+            this.testOutputHelper.WriteLine(result.Report);
+            result.Succeeded.Should().BeTrue();
+            result.Checks.Should().ContainSingle(check => check.CheckName == nameof(NewlineValueCheck));
+            result.Report.Should().Contain("Check \"NewlineValueCheck\" succeeded");
+            result.Report.Should().NotContain("CompletenessCheck");
+            result.Report.Should().NotContain("PlaceholderConsistencyCheck");
+        }
+
+        [Fact]
+        public void Analyze_CheckTypesAreConfigured_RunsSelectedChecksInRequestedOrder()
+        {
+            // Arrange
+            var analyzer = CreateAnalyzerForCleanResx();
+
+            // Act
+            var result = analyzer.Analyze(typeof(NewlineValueCheck), typeof(CompletenessCheck));
+
+            // Assert
+            this.testOutputHelper.WriteLine(result.Report);
+            result.Succeeded.Should().BeTrue();
+            result.Checks.Select(check => check.CheckName).Should().Equal(nameof(NewlineValueCheck), nameof(CompletenessCheck));
+            result.Report.IndexOf("NewlineValueCheck", StringComparison.Ordinal).Should().BeLessThan(result.Report.IndexOf("CompletenessCheck", StringComparison.Ordinal));
+            result.Report.Should().NotContain("PlaceholderConsistencyCheck");
+        }
+
+        [Fact]
+        public void Analyze_CheckNameIsConfigured_RunsOnlySelectedCheck()
+        {
+            // Arrange
+            var analyzer = CreateAnalyzerForCleanResx();
+
+            // Act
+            var result = analyzer.Analyze(nameof(CompletenessCheck));
+
+            // Assert
+            this.testOutputHelper.WriteLine(result.Report);
+            result.Succeeded.Should().BeTrue();
+            result.Checks.Should().ContainSingle(check => check.CheckName == nameof(CompletenessCheck));
+            result.Report.Should().Contain("Check \"CompletenessCheck\" succeeded");
+            result.Report.Should().NotContain("PlaceholderConsistencyCheck");
+            result.Report.Should().NotContain("NewlineValueCheck");
+        }
+
+        [Fact]
+        public void Analyze_CheckNamesAreConfigured_RunsSelectedChecksInRequestedOrder()
+        {
+            // Arrange
+            var analyzer = CreateAnalyzerForCleanResx();
+
+            // Act
+            var result = analyzer.Analyze(nameof(NewlineValueCheck), nameof(CompletenessCheck));
+
+            // Assert
+            this.testOutputHelper.WriteLine(result.Report);
+            result.Succeeded.Should().BeTrue();
+            result.Checks.Select(check => check.CheckName).Should().Equal(nameof(NewlineValueCheck), nameof(CompletenessCheck));
+            result.Report.IndexOf("NewlineValueCheck", StringComparison.Ordinal).Should().BeLessThan(result.Report.IndexOf("CompletenessCheck", StringComparison.Ordinal));
+            result.Report.Should().NotContain("PlaceholderConsistencyCheck");
+        }
+
+        [Fact]
+        public void Analyze_NoCheckSelectorIsProvided_RunsAllConfiguredChecks()
+        {
+            // Arrange
+            var analyzer = CreateAnalyzerForCleanResx();
+
+            // Act
+            var result = analyzer.Analyze();
+
+            // Assert
+            this.testOutputHelper.WriteLine(result.Report);
+            result.Succeeded.Should().BeTrue();
+            result.Checks.Select(check => check.CheckName).Should().Equal(
+                nameof(CompletenessCheck),
+                nameof(PlaceholderConsistencyCheck),
+                nameof(NewlineValueCheck));
+        }
+
+        [Fact]
+        public void Analyze_GenericCheckIsNotConfigured_ThrowsInvalidOperationException()
+        {
+            // Arrange
+            var analyzer = CreateAnalyzerForCleanResx();
+
+            // Act
+            var action = () => analyzer.Analyze<KeyMaxLengthCheck>();
+
+            // Assert
+            action.Should()
+                .Throw<InvalidOperationException>()
+                .WithMessage("No configured check of type KeyMaxLengthCheck was found.");
+        }
+
+        [Fact]
+        public void Analyze_CheckTypeIsNotConfigured_ThrowsInvalidOperationException()
+        {
+            // Arrange
+            var analyzer = CreateAnalyzerForCleanResx();
+
+            // Act
+            var action = () => analyzer.Analyze(typeof(KeyMaxLengthCheck));
+
+            // Assert
+            action.Should()
+                .Throw<InvalidOperationException>()
+                .WithMessage("No configured check of type KeyMaxLengthCheck was found.");
+        }
+
+        [Fact]
+        public void Analyze_CheckNameIsNotConfigured_ThrowsInvalidOperationException()
+        {
+            // Arrange
+            var analyzer = CreateAnalyzerForCleanResx();
+
+            // Act
+            var action = () => analyzer.Analyze(nameof(KeyMaxLengthCheck));
+
+            // Assert
+            action.Should()
+                .Throw<InvalidOperationException>()
+                .WithMessage("No configured check named KeyMaxLengthCheck was found.");
+        }
+
+        [Fact]
+        public void WithChecks_CheckTypeIsAlreadyConfigured_ThrowsInvalidOperationException()
+        {
+            // Arrange
+            var testDataDirectory = TestDataPaths.GetTestDataDirectory();
+            var resourceDirectory = new DirectoryInfo(Path.Combine(testDataDirectory.FullName, "Resources"));
+
+            // Act
+            var action = () => ResxAnalyzer
+                .ForResource(Path.Combine(resourceDirectory.FullName, "Clean.resx"))
+                .WithChecks(checks => checks
+                    .Add(new CompletenessCheck())
+                    .Add(new CompletenessCheck()));
+
+            // Assert
+            action.Should()
+                .Throw<InvalidOperationException>()
+                .WithMessage("A check of type CompletenessCheck is already configured. Each check type can only be registered once.");
+        }
+
+        [Fact]
+        public void WithChecks_CheckIsNull_ThrowsArgumentNullException()
+        {
+            // Arrange
+            var testDataDirectory = TestDataPaths.GetTestDataDirectory();
+            var resourceDirectory = new DirectoryInfo(Path.Combine(testDataDirectory.FullName, "Resources"));
+
+            // Act
+            var action = () => ResxAnalyzer
+                .ForResource(Path.Combine(resourceDirectory.FullName, "Clean.resx"))
+                .WithChecks(checks => checks.Add(null!));
+
+            // Assert
+            action.Should()
+                .Throw<ArgumentNullException>()
+                .WithParameterName("check");
+        }
+
+        [Fact]
         public void Analyze_CustomCheckIsConfigured_RunsCustomCheck()
         {
             // Arrange
@@ -353,7 +542,7 @@ namespace System.Resources.Tests
                 "Custom check saw 1 neutral entries.");
         }
 
-        private static ResxAnalyzer CreateAnalyzer()
+        private static ResxAnalyzer CreateAnalyzerForStringsResx()
         {
             var testDataDirectory = TestDataPaths.GetTestDataDirectory();
             var resourceDirectory = new DirectoryInfo(Path.Combine(testDataDirectory.FullName, "Resources"));
@@ -368,6 +557,21 @@ namespace System.Resources.Tests
                     .Add(new UnusedKeysCheck(scan => scan
                         .In(Path.Combine(testDataDirectory.FullName, "Source"))
                         .IgnoreKeys("^IgnoredDynamic_"))))
+                .Build();
+        }
+
+        private static ResxAnalyzer CreateAnalyzerForCleanResx()
+        {
+            var testDataDirectory = TestDataPaths.GetTestDataDirectory();
+            var resourceDirectory = new DirectoryInfo(Path.Combine(testDataDirectory.FullName, "Resources"));
+
+            return ResxAnalyzer
+                .ForResource(Path.Combine(resourceDirectory.FullName, "Clean.resx"))
+                .WithLocalizedResource(GermanCultureInfo, Path.Combine(resourceDirectory.FullName, "Clean.de.resx"))
+                .WithChecks(checks => checks
+                    .Add(new CompletenessCheck())
+                    .Add(new PlaceholderConsistencyCheck())
+                    .Add(new NewlineValueCheck()))
                 .Build();
         }
 

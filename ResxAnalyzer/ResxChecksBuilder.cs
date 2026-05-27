@@ -19,6 +19,17 @@ namespace System.Resources
         /// <returns>The current builder.</returns>
         public ResxChecksBuilder Add(IResxCheck check)
         {
+            if (check is null)
+            {
+                throw new ArgumentNullException(nameof(check));
+            }
+
+            var checkType = check.GetType();
+            if (this.checks.Any(existingCheck => existingCheck.GetType() == checkType))
+            {
+                throw new InvalidOperationException($"A check of type {checkType.Name} is already configured. Each check type can only be registered once.");
+            }
+
             this.checks.Add(check);
             return this;
         }
