@@ -5,13 +5,13 @@ namespace Superdev.ResxAnalyzer.Tests
         public static DirectoryInfo GetTestDataDirectory()
         {
             var directory = new DirectoryInfo(AppContext.BaseDirectory);
-            while (directory is not null && !Directory.Exists(Path.Combine(directory.FullName, "Superdev.ResxAnalyzer")))
+            while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "ResxAnalyzer.sln")))
             {
                 directory = directory.Parent;
             }
 
-            directory.Should().NotBeNull("the repository root should contain the Superdev.ResxAnalyzer directory");
-            return new DirectoryInfo(Path.Combine(directory.FullName, "Tests", "Superdev.ResxAnalyzer.Tests", "TestData"));
+            directory.Should().NotBeNull("the repository root should contain the ResxAnalyzer solution file");
+            return new DirectoryInfo(Path.Combine(directory.FullName, "Tests", "ResxAnalyzer.Tests", "TestData"));
         }
 
         public static DirectoryInfo GetChecksDirectory()
