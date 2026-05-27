@@ -7,6 +7,7 @@ namespace System.Resources
     /// </summary>
     /// <param name="Succeeded"><c>true</c> when the analyzed resources contain no configured problems.</param>
     /// <param name="Report">A printable analysis report for test output or command-line output.</param>
+    /// <param name="Checks">The result produced by each configured resource check.</param>
     public sealed record ResxAnalysisResult(bool Succeeded, string Report, IReadOnlyList<ResxCheckResult> Checks)
     {
         /// <inheritdoc />

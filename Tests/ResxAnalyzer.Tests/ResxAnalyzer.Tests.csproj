@@ -27,4 +27,9 @@
     <ProjectReference Include="..\..\ResxAnalyzer\ResxAnalyzer.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Remove="TestData\**\*.resx" />
+    <None Include="TestData\**\*.resx" />
+  </ItemGroup>
+
 </Project>
