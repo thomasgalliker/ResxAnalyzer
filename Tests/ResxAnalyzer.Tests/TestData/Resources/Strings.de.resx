@@ -1,0 +1,27 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <data name="UsedKey" xml:space="preserve">
+    <value>Verwendeter Wert</value>
+  </data>
+  <data name="XamlUsedKey" xml:space="preserve">
+    <value>In XAML verwendeter Wert</value>
+  </data>
+  <data name="PlaceholderMessage" xml:space="preserve">
+    <value>Total {0}</value>
+  </data>
+  <data name="NewlineStart" xml:space="preserve">
+    <value>Beginnt ohne Zeilenumbruch</value>
+  </data>
+  <data name="NewlineEnd" xml:space="preserve">
+    <value>Endet ohne Zeilenumbruch</value>
+  </data>
+  <data name="UnusedKey" xml:space="preserve">
+    <value>Nicht verwendeter Wert</value>
+  </data>
+  <data name="DesignerOnlyKey" xml:space="preserve">
+    <value>Nur generierter Wert</value>
+  </data>
+  <data name="IgnoredDynamic_Key" xml:space="preserve">
+    <value>Dynamisch aufgeloester Wert</value>
+  </data>
+</root>

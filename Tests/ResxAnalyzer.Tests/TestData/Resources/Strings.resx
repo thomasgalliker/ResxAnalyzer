@@ -1,0 +1,34 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <data name="UsedKey" xml:space="preserve">
+    <value>Used value</value>
+  </data>
+  <data name="XamlUsedKey" xml:space="preserve">
+    <value>XAML used value</value>
+  </data>
+  <data name="MissingNonInvariant" xml:space="preserve">
+    <value>Missing in localized resource</value>
+  </data>
+  <data name="InvariantOnly" xml:space="preserve">
+    <value>Same in every language</value>
+    <comment>@Invariant</comment>
+  </data>
+  <data name="PlaceholderMessage" xml:space="preserve">
+    <value>Total {0} of {1:N2}</value>
+  </data>
+  <data name="NewlineStart" xml:space="preserve">
+    <value>&#xA;Starts with newline</value>
+  </data>
+  <data name="NewlineEnd" xml:space="preserve">
+    <value>Ends with newline&#xA;</value>
+  </data>
+  <data name="UnusedKey" xml:space="preserve">
+    <value>Unused value</value>
+  </data>
+  <data name="DesignerOnlyKey" xml:space="preserve">
+    <value>Designer-only value</value>
+  </data>
+  <data name="IgnoredDynamic_Key" xml:space="preserve">
+    <value>Dynamically resolved value</value>
+  </data>
+</root>

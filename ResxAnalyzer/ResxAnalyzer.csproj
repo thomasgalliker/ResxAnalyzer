@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
+    <TargetFramework>netstandard2.1</TargetFramework>
     <OutputType>Library</OutputType>
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>latest</LangVersion>
@@ -12,11 +12,11 @@
   <!--NuGet package-->
   <PropertyGroup>
     <Product>ResxAnalyzer</Product>
-    <Description>A lightweight, explicit object mapping library for .NET with zero magic and full compile-time control.</Description>
+    <Description>Analyzer for RESX files</Description>
     <Version>1.0.0</Version>
     <Authors>Thomas Galliker</Authors>
     <PackageId>ResxAnalyzer</PackageId>
-    <PackageTags>mapper;mapping;map;objectmapper;dto;clone;copy;automapper</PackageTags>
+    <PackageTags>resx;analyzer;checks;warnings;localization;translation;resource</PackageTags>
     <PackageIcon>logo.png</PackageIcon>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageReadmeFile>README.md</PackageReadmeFile>
@@ -42,10 +42,5 @@
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.5" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.5" />
-  </ItemGroup>
 
 </Project>

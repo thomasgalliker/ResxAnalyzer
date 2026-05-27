@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <data name="NamedPlaceholder" xml:space="preserve">
+    <value>Hallo {firstName}</value>
+  </data>
+  <data name="MalformedPlaceholder" xml:space="preserve">
+    <value>Total {0}</value>
+  </data>
+</root>

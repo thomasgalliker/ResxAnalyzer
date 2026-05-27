@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <data name="CleanMessage" xml:space="preserve">
+    <value>Sauberer Wert {0}</value>
+  </data>
+</root>

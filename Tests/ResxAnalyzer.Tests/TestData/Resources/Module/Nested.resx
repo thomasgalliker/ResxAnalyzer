@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <data name="NestedUsed" xml:space="preserve">
+    <value>Nested value</value>
+  </data>
+  <data name="NestedMissing" xml:space="preserve">
+    <value>Missing in localized resource</value>
+  </data>
+</root>
