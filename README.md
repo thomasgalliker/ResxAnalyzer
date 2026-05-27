@@ -3,7 +3,7 @@
 [![Downloads](https://img.shields.io/nuget/dt/ResxAnalyzer.svg)](https://www.nuget.org/packages/ResxAnalyzer)
 [![Buy Me a Coffee](https://img.shields.io/badge/support-buy%20me%20a%20coffee-FFDD00)](https://buymeacoffee.com/thomasgalliker)
 
-ResxAnalyzer is a small .NET library for validating `.resx` translation resources. It is designed for unit tests first, but the API also works well for future command-line tools because the options object is JSON serializable.
+ResxAnalyzer is a small .NET library for validating `.resx` translation resources. It is designed for unit tests.
 
 ## Download and Install ResxAnalyzer
 This library is available on NuGet: https://www.nuget.org/packages/ResxAnalyzer/
@@ -36,25 +36,16 @@ Tests can print `Report` to `ITestOutputHelper` and assert `Succeeded`.
 `ToString()` returns `Report`, so `Console.WriteLine(result)` is also useful.
 
 ```csharp
-using AwesomeAssertions;
 using System.Resources;
 using System.Resources.Checks;
-using Xunit;
-using Xunit.Abstractions;
 
 public sealed class StringsTests
 {
-    private readonly ITestOutputHelper output;
-
-    public StringsTests(ITestOutputHelper output)
-    {
-        this.output = output;
-    }
-
     [Fact]
     public void ShouldAnalyzeStringResources()
     {
-        var result = ResxAnalyzer
+        // Arrange
+        var resxAnalyzer = ResxAnalyzer
             .ForResource("FishApp.Contracts/Resources/Strings.resx")
             .WithInvariantComment("@Invariant")
             .WithChecks(checks => checks
@@ -67,9 +58,12 @@ public sealed class StringsTests
                     .In("FishApp.Contracts")
                     .IgnoreKeys("^CultureInfo_"))))
             .Build()
-            .Analyze();
 
-        this.output.WriteLine(result.ToString());
+        // Act
+        var result = resxAnalyzer.Analyze();
+
+        // Assert
+        this.testOutputHelper.WriteLine(result.ToString());
         result.Succeeded.Should().BeTrue(result.Report);
     }
 }
@@ -411,7 +405,6 @@ Following keys are not used (1):
 ## Thank You
 
 Thanks to everyone who has contributed to this project.
-
 If you find a bug or want to propose a feature, feel free to open an issue on GitHub.
 
 ## Links
