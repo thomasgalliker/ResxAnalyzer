@@ -3,7 +3,7 @@
 [![Downloads](https://img.shields.io/nuget/dt/ResxAnalyzer.svg)](https://www.nuget.org/packages/ResxAnalyzer)
 [![Buy Me a Coffee](https://img.shields.io/badge/support-buy%20me%20a%20coffee-FFDD00)](https://buymeacoffee.com/thomasgalliker)
 
-ResxAnalyzer is a .... tbd
+ResxAnalyzer is a small .NET library for validating `.resx` translation resources. It is designed for unit tests first, but the API also works well for future command-line tools because the options object is JSON serializable.
 
 ## Download and Install ResxAnalyzer
 This library is available on NuGet: https://www.nuget.org/packages/ResxAnalyzer/
@@ -19,356 +19,394 @@ Or with the .NET CLI:
 dotnet add package ResxAnalyzer
 ```
 
-ResxAnalyzer supports .NET Standard 2.0 and higher.
+ResxAnalyzer supports .NET Standard 2.1 and higher.
 
 ## Quick Start
 
-### 1. Define your models
+The analyzer returns a simple result:
 
 ```csharp
-public class Person
-{
-    public int Id { get; set; }
-    public string? Name { get; set; }
-}
-
-public class PersonDto
-{
-    public int Id { get; set; }
-    public string? Name { get; set; }
-}
+public sealed record ResxAnalysisResult(
+    bool Succeeded,
+    string Report,
+    IReadOnlyList<ResxCheckResult> Checks);
 ```
 
-### 2. Create a mapping
-
-Implement `IMapping<TSource, TTarget>`:
+Tests can print `Report` to `ITestOutputHelper` and assert `Succeeded`.
+`ToString()` returns `Report`, so `Console.WriteLine(result)` is also useful.
 
 ```csharp
-using ResxAnalyzer;
+using AwesomeAssertions;
+using System.Resources;
+using System.Resources.Checks;
+using Xunit;
+using Xunit.Abstractions;
 
-public sealed class PersonMapping : IMapping<Person, PersonDto>
+public sealed class StringsTests
 {
-    public PersonDto Map(Person source)
+    private readonly ITestOutputHelper output;
+
+    public StringsTests(ITestOutputHelper output)
     {
-        return new PersonDto
-        {
-            Id = source.Id,
-            Name = source.Name,
-        };
+        this.output = output;
+    }
+
+    [Fact]
+    public void ShouldAnalyzeStringResources()
+    {
+        var result = ResxAnalyzer
+            .ForResource("FishApp.Contracts/Resources/Strings.resx")
+            .WithInvariantComment("@Invariant")
+            .WithChecks(checks => checks
+                .Add(new CompletenessCheck())
+                .Add(new PlaceholderConsistencyCheck())
+                .Add(new NewlineValueCheck())
+                .Add(new UnusedKeysCheck(scan => scan
+                    .In("FishApp.Api")
+                    .In("FishApp.Mobile/FishApp")
+                    .In("FishApp.Contracts")
+                    .IgnoreKeys("^CultureInfo_"))))
+            .Build()
+            .Analyze();
+
+        this.output.WriteLine(result.ToString());
+        result.Succeeded.Should().BeTrue(result.Report);
     }
 }
 ```
 
-### 3. Create a mapper and map an object
+At least one check must be configured with `WithChecks(...)`. The analyzer does not run hidden default checks.
+
+## Available Checks
+
+| Check | Validates | Notes |
+| --- | --- | --- |
+| `CompletenessCheck` | Every non-invariant neutral key exists with a non-empty value in every localized resource. | Keys marked with the configured invariant comment, default `@Invariant`, are excluded. |
+| `PlaceholderConsistencyCheck` | Localized values use the same placeholders as the neutral value. | Compares exact placeholder identity, supports numeric placeholders like `{0}` and named placeholders like `{name}`, and reports malformed placeholders such as `{0` or `{!invalid}`. |
+| `DuplicateKeyCheck` | Resource files do not contain duplicate `<data name="...">` entries. | Uses parsed file-order entries, so duplicate keys can be reported even though the public dictionary exposes one entry per key. |
+| `EmptyNeutralValueCheck` | Neutral resource values are not empty or whitespace. | Localized empties are handled by `CompletenessCheck`. |
+| `SuspiciousSameAsNeutralCheck` | Localized values are not identical to the neutral value for non-invariant keys. | Useful for copied, untranslated values. |
+| `WhitespaceConsistencyCheck` | Localized values preserve leading and trailing whitespace from the neutral value. | Reports spaces, tabs, and line breaks at the edges. |
+| `AcceleratorKeyCheck` | Localized values preserve accelerator key markers. | Supports common markers such as `&File` and `_File`; escaped `&&` is ignored. |
+| `PunctuationConsistencyCheck` | Localized values preserve terminal punctuation from the neutral value. | Checks punctuation such as `.`, `?`, `!`, `:`, `;`, and ellipses. |
+| `OrphanLocalizedKeyCheck` | Localized resources do not contain keys missing from the neutral resource. | Catches stale translated keys after neutral keys are removed or renamed. |
+| `CultureFileCoverageCheck` | Every configured culture has a localized resource file. | Works with cultures configured through `WithCultures(...)` or explicit localized resources. |
+| `UnusedCultureFileCheck` | Discovered localized resource files are part of the configured culture set. | Useful when stale culture files remain beside the neutral resource. |
+| `KeyMaxLengthCheck` | Resource keys do not exceed a configured maximum length. | Construct with `new KeyMaxLengthCheck(maxLength)`. |
+| `NewlineValueCheck` | Resource values do not start or end with newlines. | Applies to neutral and localized resources. |
+| `UnusedKeysCheck` | Resource keys appear in configured source files unless explicitly ignored. | Configure source scanning on the check with `new UnusedKeysCheck(scan => ...)`; scans `.cs` and `.xaml`, excluding `bin`, `obj`, `*.Designer.cs`, and `.resx`. |
+
+## Resource Selection
+
+`ForResource(...)` is the single entry point for selecting resources. It accepts:
+
+- A direct `.resx` file path.
+- A directory containing one or more neutral `.resx` files.
+- A glob pattern with `*` for one path segment.
+- A glob pattern with `**` for any subfolder depth.
+
+Localized resource selection has three modes:
+
+| Configuration | Localized resources used |
+| --- | --- |
+| Only `ForResource(...)` | Auto-discovers localized sibling files such as `Strings.de.resx`, `Strings.fr.resx`, and `Strings.it.resx`. |
+| `ForResource(...).WithCultures(...)` | Infers expected sibling files from the configured cultures, for example `de-CH` maps to `Strings.de.resx`. |
+| `ForResource(...).WithLocalizedResource(...)` | Uses only the explicitly configured localized files. This is useful for non-standard file names or locations. |
+
+When a directory or glob is used, localized resources such as `Strings.de.resx` are treated as localized siblings, not as separate neutral resource groups.
 
 ```csharp
-using ResxAnalyzer;
-
-var mapper = new Mapper(new PersonMapping());
-
-var person = new Person
-{
-    Id = 1,
-    Name = "John Doe",
-};
-
-var dto = mapper.Map<PersonDto>(person);
-
-// dto.Id == 1
-// dto.Name == "John Doe"
+var result = ResxAnalyzer
+    .ForResource("FishApp.Contracts/Resources")
+    .WithChecks(checks => checks.Add(new CompletenessCheck()))
+    .Build()
+    .Analyze();
 ```
 
-That is the core idea of ResxAnalyzer:
-you write the mapping once as a normal C# class, register it, and call `Map<TTarget>()`.
+If the directory contains multiple resource groups, all neutral resources are analyzed:
 
-## Two-Way Mapping
+```text
+Resources/Strings.resx
+Resources/Strings.de.resx
+Resources/OtherStrings.resx
+Resources/OtherStrings.de.resx
+```
 
-If you want mapping in both directions, implement both interfaces on the same class:
+Use a direct file or glob when you want to limit which groups are analyzed:
 
 ```csharp
-using ResxAnalyzer;
+var result = ResxAnalyzer
+    .ForResource("FishApp.Contracts/Resources/Other*.resx")
+    .WithChecks(checks => checks.Add(new CompletenessCheck()))
+    .Build()
+    .Analyze();
+```
 
-public sealed class PersonMapping :
-    IMapping<Person, PersonDto>,
-    IMapping<PersonDto, Person>
-{
-    public PersonDto Map(Person source)
+Recursive globs can scan resource folders across a project:
+
+```csharp
+var result = ResxAnalyzer
+    .ForResource("**/Resources/*.resx")
+    .WithChecks(checks => checks.Add(new CompletenessCheck()))
+    .Build()
+    .Analyze();
+```
+
+## Culture Discovery
+
+`WithCultures(...)` is optional. If no cultures and no explicit localized resources are configured, the analyzer discovers sibling resources next to the neutral file:
+
+```text
+Resources/Strings.resx
+Resources/Strings.de.resx
+Resources/Strings.fr.resx
+Resources/Strings.it.resx
+```
+
+This is enough:
+
+```csharp
+var result = ResxAnalyzer
+    .ForResource("Resources/Strings.resx")
+    .WithChecks(checks => checks.Add(new CompletenessCheck()))
+    .Build()
+    .Analyze();
+```
+
+That call analyzes `Strings.resx` together with discovered siblings such as `Strings.de.resx` and `Strings.fr.resx`.
+
+## Explicit Cultures
+
+Use `WithCultures(...)` when the supported languages should be defined by the application rather than by available files:
+
+```csharp
+using System.Globalization;
+
+var result = ResxAnalyzer
+    .ForResource("Resources/Strings.resx")
+    .WithCultures(new[]
     {
-        return new PersonDto
-        {
-            Id = source.Id,
-            Name = source.Name,
-        };
-    }
+        new CultureInfo("de-CH"),
+        new CultureInfo("fr-CH"),
+        new CultureInfo("it-CH")
+    })
+    .WithChecks(checks => checks.Add(new CompletenessCheck()))
+    .Build()
+    .Analyze();
+```
 
-    public Person Map(PersonDto source)
+When a specific culture has a parent culture, the analyzer looks for the parent resource file. For example, `de-CH` maps to `Strings.de.resx`.
+
+This mode is stricter than discovery: if a configured culture maps to a file that does not exist, checks such as `CultureFileCoverageCheck` and `CompletenessCheck` can report that explicitly.
+
+## Explicit Localized Resources
+
+Use `WithLocalizedResource(...)` when localized files do not follow the default sibling naming convention:
+
+```csharp
+using System.Globalization;
+
+var result = ResxAnalyzer
+    .ForResource("Resources/Strings.resx")
+    .WithLocalizedResource(new CultureInfo("de-CH"), "Translations/German.resx")
+    .WithLocalizedResource(new CultureInfo("fr-CH"), "Translations/French.resx")
+    .WithChecks(checks => checks.Add(new CompletenessCheck()))
+    .Build()
+    .Analyze();
+```
+
+Do not combine `WithCultures(...)` and `WithLocalizedResource(...)` in the same analyzer configuration.
+Once explicit localized resources are configured, the analyzer uses those files as the expected localized resources instead of auto-discovering `Strings.*.resx` siblings.
+
+## Built-In Checks
+
+The built-in checks are regular `IResxCheck` implementations:
+
+```csharp
+.WithChecks(checks => checks
+    .Add(new CompletenessCheck())
+    .Add(new PlaceholderConsistencyCheck())
+    .Add(new DuplicateKeyCheck())
+    .Add(new EmptyNeutralValueCheck())
+    .Add(new SuspiciousSameAsNeutralCheck())
+    .Add(new WhitespaceConsistencyCheck())
+    .Add(new AcceleratorKeyCheck())
+    .Add(new PunctuationConsistencyCheck())
+    .Add(new OrphanLocalizedKeyCheck())
+    .Add(new CultureFileCoverageCheck())
+    .Add(new UnusedCultureFileCheck())
+    .Add(new KeyMaxLengthCheck(80))
+    .Add(new NewlineValueCheck())
+    .Add(new UnusedKeysCheck(scan => scan
+        .In("MyApp")
+        .IgnoreKeys("^Dynamic_"))))
+```
+
+Each check produces a `ResxCheckResult`:
+
+```csharp
+public sealed record ResxCheckResult(
+    string CheckName,
+    bool Succeeded,
+    string Report);
+```
+
+The final `ResxAnalysisResult.Report` aggregates all failed check reports.
+
+## Custom Checks
+
+Custom checks implement `IResxCheck`:
+
+```csharp
+public sealed class NoTodoTranslationsCheck : IResxCheck
+{
+    public string Description => "Checks that translations do not contain TODO markers.";
+
+    public ResxCheckResult Analyze(ResxAnalysisContext context)
     {
-        return new Person
-        {
-            Id = source.Id,
-            Name = source.Name,
-        };
+        var matches = context.AllResources
+            .SelectMany(resource => resource.Entries.Values.Select(entry => new
+            {
+                Culture = resource.CultureName ?? "neutral",
+                entry.Key,
+                entry.Value
+            }))
+            .Where(entry => entry.Value.Contains("TODO", StringComparison.OrdinalIgnoreCase))
+            .Select(entry => $"> CultureInfo \"{entry.Culture}\", Key='{entry.Key}'")
+            .ToArray();
+
+        return new ResxCheckResult(
+            nameof(NoTodoTranslationsCheck),
+            matches.Length == 0,
+            matches.Length == 0
+                ? string.Empty
+                : $"Following translations contain TODO:{Environment.NewLine}{string.Join(Environment.NewLine, matches)}");
     }
 }
 ```
 
-Usage:
+Register custom checks together with built-in checks:
 
 ```csharp
-var mapper = new Mapper(new PersonMapping());
-
-var dto = mapper.Map<PersonDto>(person);
-var person2 = mapper.Map<Person>(dto);
+var result = ResxAnalyzer
+    .ForResource("Resources/Strings.resx")
+    .WithChecks(checks => checks
+        .Add(new CompletenessCheck())
+        .Add(new PlaceholderConsistencyCheck())
+        .Add(new NoTodoTranslationsCheck()))
+    .Build()
+    .Analyze();
 ```
 
-## Nested Mappings
+Custom checks receive a `ResxAnalysisContext` with:
 
-If a mapping needs to call other mappings, implement `IMappingWithContext<TSource, TTarget>`.
+- `NeutralResource`
+- `LocalizedResources`
+- `AllResources`
+- `AllKeys`
+- `InvariantKeys`
+
+The public resource model intentionally uses simple values:
 
 ```csharp
-public class Country
-{
-    public int Id { get; set; }
-    public string? Name { get; set; }
-}
+public sealed record ResxResource(
+    string FilePath,
+    string? CultureName,
+    IReadOnlyDictionary<string, ResxResourceEntry> Entries);
+```
 
-public class CountryDto
-{
-    public int Id { get; set; }
-    public string? Name { get; set; }
-}
+File usage scanning is owned by `UnusedKeysCheck`. Custom checks receive parsed resource data, not file-scanning internals.
 
-public class Person
-{
-    public int Id { get; set; }
-    public string? Name { get; set; }
-    public Country? Country { get; set; }
-}
+## JSON-Serializable Options
 
-public class PersonDto
-{
-    public int Id { get; set; }
-    public string? Name { get; set; }
-    public CountryDto? Country { get; set; }
-}
+For standalone tools or persisted configuration, use `ResxAnalyzerOptions`. It contains only JSON-friendly values: strings, dictionaries, and lists. Checks are still configured explicitly in code after deserializing options.
 
-public sealed class CountryMapping : IMapping<Country, CountryDto>
+```json
 {
-    public CountryDto Map(Country source)
-    {
-        return new CountryDto
-        {
-            Id = source.Id,
-            Name = source.Name,
-        };
-    }
-}
-
-public sealed class PersonMapping : IMappingWithContext<Person, PersonDto>
-{
-    public PersonDto Map(Person source, IMappingContext context)
-    {
-        return new PersonDto
-        {
-            Id = source.Id,
-            Name = source.Name,
-            Country = context.Map<CountryDto?>(source.Country),
-        };
-    }
+  "ResourcePath": "FishApp.Contracts/Resources/Strings.resx",
+  "LocalizedResourceFiles": {
+    "de-CH": "FishApp.Contracts/Resources/Strings.de.resx",
+    "fr-CH": "FishApp.Contracts/Resources/Strings.fr.resx"
+  },
+  "InvariantComment": "@Invariant"
 }
 ```
 
-Register both mappings:
+For discovery-based analysis, `ResourcePath` can be a directory or glob and `LocalizedResourceFiles` can be omitted:
 
-```csharp
-var mapper = new Mapper(
-    new CountryMapping(),
-    new PersonMapping());
-```
-
-Now `Person -> PersonDto` can delegate `Country -> CountryDto` to the mapper.
-
-## Collections and Arrays
-
-Collections and arrays are mapped automatically as long as an element mapping exists.
-
-```csharp
-var persons = new[]
+```json
 {
-    new Person { Id = 1, Name = "John Doe" },
-    new Person { Id = 2, Name = "Jane Doe" },
-};
-
-var mapper = new Mapper(new PersonMapping());
-
-PersonDto[] personDtos = mapper.Map<PersonDto[]>(persons);
-IEnumerable<PersonDto>? personDtoEnumerable = mapper.Map<IEnumerable<PersonDto>>(persons);
-HashSet<PersonDto>? personDtoSet = mapper.Map<HashSet<PersonDto>>(persons);
-```
-
-You only define the item mapping once. ResxAnalyzer handles the collection conversion.
-Common targets such as arrays, `List<T>`, `HashSet<T>`, `Collection<T>`, `IEnumerable<T>`, `ICollection<T>`, `IList<T>`, `IReadOnlyCollection<T>`, `IReadOnlyList<T>`, and `ISet<T>` are supported.
-That includes cross-collection mapping such as array `T[]` to `IEnumerable<T>`, `List<T>` to `Collection<T>`, or `List<T>` to `HashSet<T>`.
-
-## Polymorphic Sources
-
-The generic overload `Map<TSource, TTarget>()` respects the runtime type of reference-type inputs.
-
-```csharp
-Person person = new Employee { Name = "Jane Doe" };
-
-PersonDto dto = mapper.Map<Person, PersonDto>(person);
-```
-
-If an `Employee -> PersonDto` mapping is registered, ResxAnalyzer will use it for the example above.
-
-## Registration Options
-
-### Register mappings directly
-
-```csharp
-var mapper = new Mapper(
-    new PersonMapping(),
-    new CountryMapping());
-```
-
-You can also register mappings after construction:
-
-```csharp
-IMapper mapper = new Mapper();
-
-mapper.RegisterMapping(new PersonMapping());
-mapper.RegisterMapping(new CountryMapping());
-```
-
-Or register a mapping delegate:
-
-```csharp
-IMapper mapper = new Mapper();
-
-mapper.RegisterMapping<Person, PersonDto>(source => new PersonDto
-{
-    Id = source.Id,
-    Name = source.Name,
-});
-```
-
-### Register with dependency injection
-
-ResxAnalyzer integrates with `Microsoft.Extensions.DependencyInjection`.
-
-```csharp
-using Microsoft.Extensions.DependencyInjection;
-using ResxAnalyzer;
-
-var services = new ServiceCollection();
-
-services.AddMapping(options =>
-{
-    options.Mappings.ScanAssembly(typeof(PersonMapping).Assembly);
-});
-
-var serviceProvider = services.BuildServiceProvider();
-var mapper = serviceProvider.GetRequiredService<IMapper>();
-```
-
-You can also add mappings manually:
-
-```csharp
-services.AddMapping(options =>
-{
-    options.Mappings.Add(new PersonMapping(), new CountryMapping());
-});
-```
-
-## Per-Call Options
-
-You can override mapping behavior per call:
-
-```csharp
-var dto = mapper.Map<PersonDto>(person, options =>
-{
-    options.EnableRecursionHandling = true;
-});
-```
-
-This is useful when only specific mapping operations need additional safeguards.
-
-## Recursion Handling
-
-By default, ResxAnalyzer does not track references while mapping.
-That keeps mapping fast and allocation-light for simple object graphs.
-
-If you map circular object graphs, enable recursion handling:
-
-```csharp
-var mapper = new Mapper(new MapperOptions
-{
-    EnableRecursionHandling = true,
-    Mappings = new IMapping[]
-    {
-        new PersonMapping(),
-        new CountryMapping(),
-    }
-});
-```
-
-You can also configure a maximum depth:
-
-```csharp
-var mapper = new Mapper(new MapperOptions
-{
-    EnableRecursionHandling = true,
-    MaxDepth = 10,
-    ThrowIfMaxDepthExceeded = true,
-    Mappings = new IMapping[]
-    {
-        new PersonMapping(),
-        new CountryMapping(),
-    }
-});
-```
-
-> [!WARNING]
-> Recursion handling has a runtime cost and should only be enabled when needed.
-
-## Exceptions
-
-ResxAnalyzer throws explicit exceptions when something is missing or invalid:
-
-| Exception | Meaning |
-|---|---|
-| `DuplicateMappingException` | More than one mapping was registered for the same source and target type. |
-| `MissingMappingException` | No mapping exists for the requested source and target type. |
-| `MappingException` | A mapping failed during execution. |
-| `AggregateException` | Multiple nested mappings failed during one operation. |
-
-Example:
-
-```csharp
-try
-{
-    var dto = mapper.Map<PersonDto>(person);
-}
-catch (MissingMappingException ex)
-{
-    Console.WriteLine(ex.Message);
+  "ResourcePath": "FishApp.Contracts/**/Resources/*.resx"
 }
 ```
 
-## Design Philosophy
+You can also configure one neutral file directly:
 
-ResxAnalyzer treats mapping as application code, not configuration.
+```json
+{
+  "ResourcePath": "FishApp.Contracts/Resources/Strings.resx"
+}
+```
 
-That means:
+Run from deserialized options:
 
-- Mapping behavior is explicit
-- The implementation is visible in your codebase
-- Debugging happens in normal C# code
-- Refactoring works naturally
-- Complex mappings stay maintainable because composition is explicit
+```csharp
+var options = JsonSerializer.Deserialize<ResxAnalyzerOptions>(json)!;
+var result = ResxAnalyzer
+    .ForOptions(options)
+    .WithChecks(checks => checks
+        .Add(new CompletenessCheck())
+        .Add(new PlaceholderConsistencyCheck())
+        .Add(new UnusedKeysCheck(scan => scan
+            .In("FishApp.Api")
+            .In("FishApp.Mobile/FishApp")
+            .In("FishApp.Contracts")
+            .IgnoreKeys("^CultureInfo_"))))
+    .Build()
+    .Analyze();
 
-If a mapping is important enough to exist, it is important enough to be code you can read.
+Console.WriteLine(result.Report);
+return result.Succeeded ? 0 : 1;
+```
+
+If `LocalizedResourceFiles` is empty, localized sibling resources are discovered automatically. Check-specific configuration, such as source directories for `UnusedKeysCheck`, lives on the check itself rather than in `ResxAnalyzerOptions`.
+
+## Result Report
+
+When a check succeeds, the report includes:
+
+```text
+Check "CompletenessCheck" succeeded
+Checks that every non-invariant resource key exists with a non-empty value in every localized resource.
+```
+
+When a check fails, the report includes the check name plus the explanation, for example:
+
+```text
+Check "CompletenessCheck" failed
+Checks that every non-invariant resource key exists with a non-empty value in every localized resource.
+Following translation keys are missing:
+CultureInfo "de" (1):
+> MissingButtonText
+
+Check "PlaceholderConsistencyCheck" failed
+Checks that translated values use the same placeholder tokens as the neutral resource.
+Following translation keys have inconsistent placeholders:
+CultureInfo "fr" (1):
+> TotalMessage (neutral: {0}, {1:N2}, localized: {0})
+
+Check "UnusedKeysCheck" failed
+Checks that every resource key appears in the configured source files unless explicitly ignored.
+Usage scan:
+searchDirectories:
+> FishApp.Api
+> FishApp.Mobile/FishApp
+searchFileExtensions: .cs, .xaml
+ignoredUsageKeyPatterns: ^CultureInfo_
+
+Following keys are not used (1):
+> OldUnusedText
+```
 
 ## Thank You
 
@@ -376,5 +414,7 @@ Thanks to everyone who has contributed to this project.
 
 If you find a bug or want to propose a feature, feel free to open an issue on GitHub.
 
-
 ## Links
+
+- [NuGet package](https://www.nuget.org/packages/ResxAnalyzer)
+- [GitHub repository](https://github.com/thomasgalliker/ResxAnalyzer)
