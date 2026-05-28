@@ -225,8 +225,8 @@ namespace System.Resources.Tests
             result.Report.Should().Contain("Checks that every non-invariant resource key exists with a non-empty value in every localized resource.");
             result.Report.Should().Contain("Check \"PlaceholderConsistencyCheck\" succeeded");
             result.Report.Should().Contain("Checks that translated values use the same placeholder tokens as the neutral resource.");
-            result.Report.Should().Contain("Check \"NewlineValueCheck\" succeeded");
-            result.Report.Should().Contain("Checks that resource values do not start or end with newlines.");
+            result.Report.Should().Contain("Check \"NewlineConsistencyCheck\" succeeded");
+            result.Report.Should().Contain("Checks that localized values preserve the leading and trailing newline characters of the neutral value.");
             result.ToString().Should().Be(result.Report);
         }
 
@@ -245,7 +245,7 @@ namespace System.Resources.Tests
             result.Checks.Should().ContainSingle(check => check.CheckName == nameof(PlaceholderConsistencyCheck));
             result.Report.Should().Contain("Check \"PlaceholderConsistencyCheck\" succeeded");
             result.Report.Should().NotContain("CompletenessCheck");
-            result.Report.Should().NotContain("NewlineValueCheck");
+            result.Report.Should().NotContain("NewlineConsistencyCheck");
         }
 
         [Fact]
@@ -255,13 +255,13 @@ namespace System.Resources.Tests
             var analyzer = CreateAnalyzerForCleanResx();
 
             // Act
-            var result = analyzer.Analyze(typeof(NewlineValueCheck));
+            var result = analyzer.Analyze(typeof(NewlineConsistencyCheck));
 
             // Assert
             this.testOutputHelper.WriteLine(result.Report);
             result.Succeeded.Should().BeTrue();
-            result.Checks.Should().ContainSingle(check => check.CheckName == nameof(NewlineValueCheck));
-            result.Report.Should().Contain("Check \"NewlineValueCheck\" succeeded");
+            result.Checks.Should().ContainSingle(check => check.CheckName == nameof(NewlineConsistencyCheck));
+            result.Report.Should().Contain("Check \"NewlineConsistencyCheck\" succeeded");
             result.Report.Should().NotContain("CompletenessCheck");
             result.Report.Should().NotContain("PlaceholderConsistencyCheck");
         }
@@ -273,13 +273,13 @@ namespace System.Resources.Tests
             var analyzer = CreateAnalyzerForCleanResx();
 
             // Act
-            var result = analyzer.Analyze(typeof(NewlineValueCheck), typeof(CompletenessCheck));
+            var result = analyzer.Analyze(typeof(NewlineConsistencyCheck), typeof(CompletenessCheck));
 
             // Assert
             this.testOutputHelper.WriteLine(result.Report);
             result.Succeeded.Should().BeTrue();
-            result.Checks.Select(check => check.CheckName).Should().Equal(nameof(NewlineValueCheck), nameof(CompletenessCheck));
-            result.Report.IndexOf("NewlineValueCheck", StringComparison.Ordinal).Should().BeLessThan(result.Report.IndexOf("CompletenessCheck", StringComparison.Ordinal));
+            result.Checks.Select(check => check.CheckName).Should().Equal(nameof(NewlineConsistencyCheck), nameof(CompletenessCheck));
+            result.Report.IndexOf("NewlineConsistencyCheck", StringComparison.Ordinal).Should().BeLessThan(result.Report.IndexOf("CompletenessCheck", StringComparison.Ordinal));
             result.Report.Should().NotContain("PlaceholderConsistencyCheck");
         }
 
@@ -298,7 +298,7 @@ namespace System.Resources.Tests
             result.Checks.Should().ContainSingle(check => check.CheckName == nameof(CompletenessCheck));
             result.Report.Should().Contain("Check \"CompletenessCheck\" succeeded");
             result.Report.Should().NotContain("PlaceholderConsistencyCheck");
-            result.Report.Should().NotContain("NewlineValueCheck");
+            result.Report.Should().NotContain("NewlineConsistencyCheck");
         }
 
         [Fact]
@@ -308,13 +308,13 @@ namespace System.Resources.Tests
             var analyzer = CreateAnalyzerForCleanResx();
 
             // Act
-            var result = analyzer.Analyze(nameof(NewlineValueCheck), nameof(CompletenessCheck));
+            var result = analyzer.Analyze(nameof(NewlineConsistencyCheck), nameof(CompletenessCheck));
 
             // Assert
             this.testOutputHelper.WriteLine(result.Report);
             result.Succeeded.Should().BeTrue();
-            result.Checks.Select(check => check.CheckName).Should().Equal(nameof(NewlineValueCheck), nameof(CompletenessCheck));
-            result.Report.IndexOf("NewlineValueCheck", StringComparison.Ordinal).Should().BeLessThan(result.Report.IndexOf("CompletenessCheck", StringComparison.Ordinal));
+            result.Checks.Select(check => check.CheckName).Should().Equal(nameof(NewlineConsistencyCheck), nameof(CompletenessCheck));
+            result.Report.IndexOf("NewlineConsistencyCheck", StringComparison.Ordinal).Should().BeLessThan(result.Report.IndexOf("CompletenessCheck", StringComparison.Ordinal));
             result.Report.Should().NotContain("PlaceholderConsistencyCheck");
         }
 
@@ -342,7 +342,7 @@ namespace System.Resources.Tests
                 nameof(OrphanLocalizedKeyCheck),
                 nameof(CultureFileCoverageCheck),
                 nameof(UnusedCultureFileCheck),
-                nameof(NewlineValueCheck));
+                nameof(NewlineConsistencyCheck));
         }
 
         [Fact]

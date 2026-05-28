@@ -28,6 +28,7 @@ namespace System.Resources.Tests.Checks
             result.Succeeded.Should().BeFalse();
             result.Report.Should().Contain("Following localized values have inconsistent leading or trailing whitespace (1):");
             result.Report.Should().Contain("Key='WhitespaceValue'");
+            result.Report.Should().NotContain("Key='NewlineValue'");
         }
     }
 }

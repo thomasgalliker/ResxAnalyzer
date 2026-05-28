@@ -1,12 +1,12 @@
 namespace System.Resources.Checks
 {
     /// <summary>
-    /// Checks that localized values preserve leading and trailing non-newline whitespace.
+    /// Checks that localized values preserve leading and trailing newline characters.
     /// </summary>
-    public sealed class WhitespaceConsistencyCheck : IResxCheck
+    public sealed class NewlineConsistencyCheck : IResxCheck
     {
         /// <inheritdoc />
-        public string Description => "Checks that localized values preserve the leading and trailing non-newline whitespace of the neutral value.";
+        public string Description => "Checks that localized values preserve the leading and trailing newline characters of the neutral value.";
 
         /// <inheritdoc />
         public ResxCheckResult Analyze(ResxAnalysisContext context)
@@ -22,10 +22,10 @@ namespace System.Resources.Checks
                         {
                             CultureName = localizedResource.CultureName ?? string.Empty,
                             entry.Key,
-                            NeutralLeading = EdgeSequence.GetLeadingHorizontalWhitespace(entry.Value),
-                            LocalizedLeading = EdgeSequence.GetLeadingHorizontalWhitespace(localizedEntry.Value),
-                            NeutralTrailing = EdgeSequence.GetTrailingHorizontalWhitespace(entry.Value),
-                            LocalizedTrailing = EdgeSequence.GetTrailingHorizontalWhitespace(localizedEntry.Value)
+                            NeutralLeading = EdgeSequence.GetLeadingNewlines(entry.Value),
+                            LocalizedLeading = EdgeSequence.GetLeadingNewlines(localizedEntry.Value),
+                            NeutralTrailing = EdgeSequence.GetTrailingNewlines(entry.Value),
+                            LocalizedTrailing = EdgeSequence.GetTrailingNewlines(localizedEntry.Value)
                         };
                     })
                     .Where(item => !string.Equals(item.NeutralLeading, item.LocalizedLeading, StringComparison.Ordinal) ||
@@ -40,7 +40,7 @@ namespace System.Resources.Checks
             }
 
             var stringBuilder = new StringBuilder();
-            stringBuilder.AppendLine($"Following localized values have inconsistent leading or trailing whitespace ({mismatches.Length}):");
+            stringBuilder.AppendLine($"Following localized values have inconsistent leading or trailing newlines ({mismatches.Length}):");
             foreach (var mismatch in mismatches)
             {
                 stringBuilder.AppendLine($"> CultureInfo \"{mismatch.CultureName}\", Key='{mismatch.Key}', NeutralLeading='{EdgeSequence.Escape(mismatch.NeutralLeading)}', LocalizedLeading='{EdgeSequence.Escape(mismatch.LocalizedLeading)}', NeutralTrailing='{EdgeSequence.Escape(mismatch.NeutralTrailing)}', LocalizedTrailing='{EdgeSequence.Escape(mismatch.LocalizedTrailing)}'");

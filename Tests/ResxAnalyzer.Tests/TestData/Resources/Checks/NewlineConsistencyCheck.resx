@@ -12,10 +12,16 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="WhitespaceValue" xml:space="preserve">
-    <value> Leading and trailing </value>
+  <data name="Clean" xml:space="preserve">
+    <value>Clean value</value>
   </data>
-  <data name="NewlineValue" xml:space="preserve">
-    <value>&#xA;Line breaks are checked separately&#xA;</value>
+  <data name="LeadingNewlineValue" xml:space="preserve">
+    <value>&#xA;Starts with newline</value>
+  </data>
+  <data name="TrailingNewlineValue" xml:space="preserve">
+    <value>Ends with newline&#xD;&#xA;</value>
+  </data>
+  <data name="LocalizedTrailingNewlineValue" xml:space="preserve">
+    <value>Neutral clean value</value>
   </data>
 </root>

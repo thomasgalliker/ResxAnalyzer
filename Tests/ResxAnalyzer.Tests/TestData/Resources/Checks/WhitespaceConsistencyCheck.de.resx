@@ -15,4 +15,7 @@
   <data name="WhitespaceValue" xml:space="preserve">
     <value>Leading and trailing</value>
   </data>
+  <data name="NewlineValue" xml:space="preserve">
+    <value>Zeilenumbrueche werden separat geprueft</value>
+  </data>
 </root>

@@ -12,10 +12,19 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="WhitespaceValue" xml:space="preserve">
-    <value> Leading and trailing </value>
+  <data name="Clean" xml:space="preserve">
+    <value>Sauberer Wert</value>
   </data>
-  <data name="NewlineValue" xml:space="preserve">
-    <value>&#xA;Line breaks are checked separately&#xA;</value>
+  <data name="NeutralStartsWithWhitespace" xml:space="preserve">
+    <value>Ohne Leerzeichen</value>
+  </data>
+  <data name="NeutralEndsWithWhitespace" xml:space="preserve">
+    <value>Ohne Leerzeichen</value>
+  </data>
+  <data name="LocalizedStartsWithWhitespace" xml:space="preserve">
+    <value> Beginnt mit Leerzeichen</value>
+  </data>
+  <data name="LocalizedEndsWithWhitespace" xml:space="preserve">
+    <value>Endet mit Leerzeichen </value>
   </data>
 </root>

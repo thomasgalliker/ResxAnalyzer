@@ -140,7 +140,7 @@ namespace System.Resources
                 new OrphanLocalizedKeyCheck(),
                 new CultureFileCoverageCheck(),
                 new UnusedCultureFileCheck(),
-                new NewlineValueCheck()
+                new NewlineConsistencyCheck()
             ];
         }
 
