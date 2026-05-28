@@ -13,7 +13,7 @@ namespace System.Resources.Tests.Checks
             this.resxAnalyzer = ResxAnalyzer
                 .ForResource(Path.Combine(checksDirectory.FullName, "UnusedCultureFileCheck.resx"))
                 .WithCultures([new CultureInfo("de-CH")])
-                .WithChecks(checks => checks.Add(new UnusedCultureFileCheck()))
+                .WithChecks(checks => checks.Clear().Add(new UnusedCultureFileCheck()))
                 .Build();
         }
 

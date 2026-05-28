@@ -13,7 +13,7 @@ namespace System.Resources.Tests.Checks
             this.resxAnalyzer = ResxAnalyzer
                 .ForResource(Path.Combine(checksDirectory.FullName, "SuspiciousSameAsNeutralCheck.resx"))
                 .WithLocalizedResource(new CultureInfo("de-CH"), Path.Combine(checksDirectory.FullName, "SuspiciousSameAsNeutralCheck.de.resx"))
-                .WithChecks(checks => checks.Add(new SuspiciousSameAsNeutralCheck()))
+                .WithChecks(checks => checks.Clear().Add(new SuspiciousSameAsNeutralCheck()))
                 .Build();
         }
 

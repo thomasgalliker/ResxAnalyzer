@@ -10,7 +10,7 @@ namespace System.Resources
         private readonly string resourcePath;
         private Dictionary<CultureInfo, FileInfo>? localizedResourceFiles;
         private readonly List<CultureInfo> cultures = [];
-        private readonly List<IResxCheck> checks = [];
+        private readonly List<IResxCheck> checks = GetDefaultChecks();
         private string invariantComment = DefaultInvariantComment;
         private bool useCultures;
 
@@ -90,13 +90,20 @@ namespace System.Resources
         }
 
         /// <summary>
-        /// Configures the checks to run.
+        /// Configures the registered checks to run.
         /// </summary>
-        /// <param name="configure">The check configuration callback.</param>
+        /// <param name="configure">
+        /// The check configuration callback. Built-in checks are registered by default and can be removed with
+        /// <see cref="ResxChecksBuilder.Clear"/> or <see cref="ResxChecksBuilder.Remove{TCheck}"/>.
+        /// </param>
         /// <returns>The current builder.</returns>
         public ResxAnalyzerBuilder WithChecks(Action<ResxChecksBuilder> configure)
         {
-            this.checks.Clear();
+            if (configure is null)
+            {
+                throw new ArgumentNullException(nameof(configure));
+            }
+
             var builder = new ResxChecksBuilder(this.checks);
             configure(builder);
             return this;
@@ -112,10 +119,29 @@ namespace System.Resources
             var internalOptions = ResxAnalyzer.CreateInternalOptions(options);
             if (this.checks.Count == 0)
             {
-                throw new InvalidOperationException("At least one .resx check must be configured with WithChecks(...).");
+                throw new InvalidOperationException("At least one .resx check must be registered.");
             }
 
             return new ResxAnalyzer(internalOptions, this.checks.ToArray());
+        }
+
+        private static List<IResxCheck> GetDefaultChecks()
+        {
+            return
+            [
+                new CompletenessCheck(),
+                new PlaceholderConsistencyCheck(),
+                new DuplicateKeyCheck(),
+                new EmptyNeutralValueCheck(),
+                new SuspiciousSameAsNeutralCheck(),
+                new WhitespaceConsistencyCheck(),
+                new AcceleratorKeyCheck(),
+                new PunctuationConsistencyCheck(),
+                new OrphanLocalizedKeyCheck(),
+                new CultureFileCoverageCheck(),
+                new UnusedCultureFileCheck(),
+                new NewlineValueCheck()
+            ];
         }
 
         private ResxAnalyzerOptions BuildOptions()

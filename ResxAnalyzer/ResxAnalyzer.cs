@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
 
@@ -49,7 +48,7 @@ namespace System.Resources
         }
 
         /// <summary>
-        /// Runs the configured analysis.
+        /// Runs the registered checks.
         /// </summary>
         /// <returns>The complete analysis result.</returns>
         public ResxAnalysisResult Analyze()
@@ -58,9 +57,9 @@ namespace System.Resources
         }
 
         /// <summary>
-        /// Runs the configured analysis with the configured check of the specified type.
+        /// Runs the registered check of the specified type.
         /// </summary>
-        /// <typeparam name="TCheck">The type of the configured check to run.</typeparam>
+        /// <typeparam name="TCheck">The type of the registered check to run.</typeparam>
         /// <returns>The complete analysis result.</returns>
         public ResxAnalysisResult Analyze<TCheck>()
             where TCheck : IResxCheck
@@ -69,9 +68,9 @@ namespace System.Resources
         }
 
         /// <summary>
-        /// Runs the configured analysis with the configured check of the specified type.
+        /// Runs the registered check of the specified type.
         /// </summary>
-        /// <param name="checkType">The type of the configured check to run.</param>
+        /// <param name="checkType">The type of the registered check to run.</param>
         /// <returns>The complete analysis result.</returns>
         public ResxAnalysisResult Analyze(Type checkType)
         {
@@ -84,9 +83,9 @@ namespace System.Resources
         }
 
         /// <summary>
-        /// Runs the configured analysis with the configured checks of the specified types.
+        /// Runs the registered checks of the specified types.
         /// </summary>
-        /// <param name="checkTypes">The types of the configured checks to run.</param>
+        /// <param name="checkTypes">The types of the registered checks to run.</param>
         /// <returns>The complete analysis result.</returns>
         public ResxAnalysisResult Analyze(params Type[] checkTypes)
         {
@@ -104,9 +103,9 @@ namespace System.Resources
         }
 
         /// <summary>
-        /// Runs the configured analysis with the configured check that has the specified type name.
+        /// Runs the registered check that has the specified type name.
         /// </summary>
-        /// <param name="checkName">The configured check type name to run.</param>
+        /// <param name="checkName">The registered check type name to run.</param>
         /// <returns>The complete analysis result.</returns>
         public ResxAnalysisResult Analyze(string checkName)
         {
@@ -119,9 +118,9 @@ namespace System.Resources
         }
 
         /// <summary>
-        /// Runs the configured analysis with the configured checks that have the specified type names.
+        /// Runs the registered checks that have the specified type names.
         /// </summary>
-        /// <param name="checkNames">The configured check type names to run.</param>
+        /// <param name="checkNames">The registered check type names to run.</param>
         /// <returns>The complete analysis result.</returns>
         public ResxAnalysisResult Analyze(params string[] checkNames)
         {
@@ -156,44 +155,12 @@ namespace System.Resources
 
         private IResxCheck GetConfiguredCheck(Type checkType)
         {
-            if (checkType is null)
-            {
-                throw new ArgumentNullException(nameof(checkType));
-            }
-
-            if (!typeof(IResxCheck).IsAssignableFrom(checkType))
-            {
-                throw new ArgumentException($"Check type {checkType.Name} must implement {nameof(IResxCheck)}.", nameof(checkType));
-            }
-
-            var check = this.checks.SingleOrDefault(configuredCheck => configuredCheck.GetType() == checkType);
-            if (check is null)
-            {
-                throw new InvalidOperationException($"No configured check of type {checkType.Name} was found.");
-            }
-
-            return check;
+            return ResxChecksBuilder.GetCheck(this.checks, checkType);
         }
 
         private IResxCheck GetConfiguredCheck(string checkName)
         {
-            if (checkName is null)
-            {
-                throw new ArgumentNullException(nameof(checkName));
-            }
-
-            if (string.IsNullOrWhiteSpace(checkName))
-            {
-                throw new ArgumentException("Check name must not be empty.", nameof(checkName));
-            }
-
-            var check = this.checks.SingleOrDefault(configuredCheck => string.Equals(configuredCheck.GetType().Name, checkName, StringComparison.Ordinal));
-            if (check is null)
-            {
-                throw new InvalidOperationException($"No configured check named {checkName} was found.");
-            }
-
-            return check;
+            return ResxChecksBuilder.GetCheck(this.checks, checkName);
         }
 
         private static string FormatReport(IReadOnlyList<ResourceGroupAnalysisResult> groupResults)

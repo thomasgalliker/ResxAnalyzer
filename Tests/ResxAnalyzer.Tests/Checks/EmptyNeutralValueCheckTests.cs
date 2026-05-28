@@ -12,7 +12,7 @@ namespace System.Resources.Tests.Checks
 
             this.resxAnalyzer = ResxAnalyzer
                 .ForResource(Path.Combine(checksDirectory.FullName, "EmptyNeutralValueCheck.resx"))
-                .WithChecks(checks => checks.Add(new EmptyNeutralValueCheck()))
+                .WithChecks(checks => checks.Clear().Add(new EmptyNeutralValueCheck()))
                 .Build();
         }
 

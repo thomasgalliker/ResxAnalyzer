@@ -13,7 +13,7 @@ namespace System.Resources.Tests.Checks
             this.resxAnalyzer = ResxAnalyzer
                 .ForResource(Path.Combine(checksDirectory.FullName, "WhitespaceConsistencyCheck.resx"))
                 .WithLocalizedResource(new CultureInfo("de-CH"), Path.Combine(checksDirectory.FullName, "WhitespaceConsistencyCheck.de.resx"))
-                .WithChecks(checks => checks.Add(new WhitespaceConsistencyCheck()))
+                .WithChecks(checks => checks.Clear().Add(new WhitespaceConsistencyCheck()))
                 .Build();
         }
 

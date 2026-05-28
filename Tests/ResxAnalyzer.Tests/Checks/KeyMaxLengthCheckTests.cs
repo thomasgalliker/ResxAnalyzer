@@ -12,7 +12,7 @@ namespace System.Resources.Tests.Checks
 
             this.resxAnalyzer = ResxAnalyzer
                 .ForResource(Path.Combine(checksDirectory.FullName, "KeyMaxLengthCheck.resx"))
-                .WithChecks(checks => checks.Add(new KeyMaxLengthCheck(10)))
+                .WithChecks(checks => checks.Clear().Add(new KeyMaxLengthCheck(10)))
                 .Build();
         }
 

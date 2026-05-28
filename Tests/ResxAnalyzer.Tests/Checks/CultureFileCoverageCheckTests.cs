@@ -13,7 +13,7 @@ namespace System.Resources.Tests.Checks
             this.resxAnalyzer = ResxAnalyzer
                 .ForResource(Path.Combine(checksDirectory.FullName, "CultureFileCoverageCheck.resx"))
                 .WithCultures([new CultureInfo("de-CH"), new CultureInfo("fr-CH")])
-                .WithChecks(checks => checks.Add(new CultureFileCoverageCheck()))
+                .WithChecks(checks => checks.Clear().Add(new CultureFileCoverageCheck()))
                 .Build();
         }
 

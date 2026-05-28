@@ -13,7 +13,7 @@ namespace System.Resources.Tests.Checks
             this.resxAnalyzer = ResxAnalyzer
                 .ForResource(Path.Combine(checksDirectory.FullName, "AcceleratorKeyCheck.resx"))
                 .WithLocalizedResource(new CultureInfo("de-CH"), Path.Combine(checksDirectory.FullName, "AcceleratorKeyCheck.de.resx"))
-                .WithChecks(checks => checks.Add(new AcceleratorKeyCheck()))
+                .WithChecks(checks => checks.Clear().Add(new AcceleratorKeyCheck()))
                 .Build();
         }
 

@@ -13,7 +13,7 @@ namespace System.Resources.Tests.Checks
             this.resxAnalyzer = ResxAnalyzer
                 .ForResource(Path.Combine(checksDirectory.FullName, "PunctuationConsistencyCheck.resx"))
                 .WithLocalizedResource(new CultureInfo("de-CH"), Path.Combine(checksDirectory.FullName, "PunctuationConsistencyCheck.de.resx"))
-                .WithChecks(checks => checks.Add(new PunctuationConsistencyCheck()))
+                .WithChecks(checks => checks.Clear().Add(new PunctuationConsistencyCheck()))
                 .Build();
         }
 

@@ -13,7 +13,7 @@ namespace System.Resources.Tests.Checks
 
             this.resxAnalyzer = ResxAnalyzer
                 .ForResource(Path.Combine(checksDirectory.FullName, "UnusedKeysCheck.resx"))
-                .WithChecks(checks => checks.Add(new UnusedKeysCheck(scan => scan
+                .WithChecks(checks => checks.Clear().Add(new UnusedKeysCheck(scan => scan
                     .In(sourceDirectory)
                     .IgnoreKeys("^IgnoredDynamic_"))))
                 .Build();
@@ -43,7 +43,7 @@ namespace System.Resources.Tests.Checks
             var checksDirectory = TestDataPaths.GetChecksDirectory();
             var analyzer = ResxAnalyzer
                 .ForResource(Path.Combine(checksDirectory.FullName, "UnusedKeysCheck.resx"))
-                .WithChecks(checks => checks.Add(new UnusedKeysCheck()))
+                .WithChecks(checks => checks.Clear().Add(new UnusedKeysCheck()))
                 .Build();
 
             // Act

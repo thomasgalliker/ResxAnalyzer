@@ -5,3 +5,4 @@ global using System.Collections.Generic;
 global using System.Linq;
 global using System.Text.RegularExpressions;
 global using System.Resources.Checks;
+global using System.Text;

@@ -13,7 +13,7 @@ namespace System.Resources.Tests.Checks
             this.resxAnalyzer = ResxAnalyzer
                 .ForResource(Path.Combine(checksDirectory.FullName, "CompletenessCheck.resx"))
                 .WithLocalizedResource(new CultureInfo("de-CH"), Path.Combine(checksDirectory.FullName, "CompletenessCheck.de.resx"))
-                .WithChecks(checks => checks.Add(new CompletenessCheck()))
+                .WithChecks(checks => checks.Clear().Add(new CompletenessCheck()))
                 .Build();
         }
 

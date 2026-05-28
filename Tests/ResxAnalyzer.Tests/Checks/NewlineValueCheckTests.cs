@@ -13,7 +13,7 @@ namespace System.Resources.Tests.Checks
             this.resxAnalyzer = ResxAnalyzer
                 .ForResource(Path.Combine(checksDirectory.FullName, "NewlineValueCheck.resx"))
                 .WithLocalizedResource(new CultureInfo("de-CH"), Path.Combine(checksDirectory.FullName, "NewlineValueCheck.de.resx"))
-                .WithChecks(checks => checks.Add(new NewlineValueCheck()))
+                .WithChecks(checks => checks.Clear().Add(new NewlineValueCheck()))
                 .Build();
         }
 

@@ -17,12 +17,12 @@ namespace System.Resources.Tests
             var testDataDirectory = TestDataPaths.GetTestDataDirectory();
             var neutralResourceFile = Path.Combine(testDataDirectory.FullName, "Resources", "Strings.resx");
 
-            // Act
-            var result = ResxAnalyzer
+            var resxAnalyzer = ResxAnalyzer
                 .ForResource(neutralResourceFile)
-                .WithChecks(checks => checks.Add(new CompletenessCheck()))
-                .Build()
-                .Analyze();
+                .Build();
+
+            // Act
+            var result = resxAnalyzer.Analyze<CompletenessCheck>();
 
             // Assert
             this.testOutputHelper.WriteLine(result.Report);
@@ -37,12 +37,12 @@ namespace System.Resources.Tests
             var testDataDirectory = TestDataPaths.GetTestDataDirectory();
             var resourceDirectory = Path.Combine(testDataDirectory.FullName, "Resources");
 
-            // Act
-            var result = ResxAnalyzer
+            var resxAnalyzer = ResxAnalyzer
                 .ForResource(resourceDirectory)
-                .WithChecks(checks => checks.Add(new CompletenessCheck()))
-                .Build()
-                .Analyze();
+                .Build();
+
+            // Act
+            var result = resxAnalyzer.Analyze<CompletenessCheck>();
 
             // Assert
             this.testOutputHelper.WriteLine(result.Report);
@@ -57,12 +57,12 @@ namespace System.Resources.Tests
             var testDataDirectory = TestDataPaths.GetTestDataDirectory();
             var resourceDirectory = Path.Combine(testDataDirectory.FullName, "Resources");
 
-            // Act
-            var result = ResxAnalyzer
+            var resxAnalyzer = ResxAnalyzer
                 .ForResource(resourceDirectory)
-                .WithChecks(checks => checks.Add(new CompletenessCheck()))
-                .Build()
-                .Analyze();
+                .Build();
+
+            // Act
+            var result = resxAnalyzer.Analyze<CompletenessCheck>();
 
             // Assert
             this.testOutputHelper.WriteLine(result.Report);
@@ -79,12 +79,12 @@ namespace System.Resources.Tests
             var testDataDirectory = TestDataPaths.GetTestDataDirectory();
             var resourceGlob = Path.Combine(testDataDirectory.FullName, "Resources", "**", "Nested*.resx");
 
-            // Act
-            var result = ResxAnalyzer
+            var resxAnalyzer = ResxAnalyzer
                 .ForResource(resourceGlob)
-                .WithChecks(checks => checks.Add(new CompletenessCheck()))
-                .Build()
-                .Analyze();
+                .Build();
+
+            // Act
+            var result = resxAnalyzer.Analyze<CompletenessCheck>();
 
             // Assert
             this.testOutputHelper.WriteLine(result.Report);
@@ -100,13 +100,13 @@ namespace System.Resources.Tests
             var testDataDirectory = TestDataPaths.GetTestDataDirectory();
             var neutralResourceFile = Path.Combine(testDataDirectory.FullName, "Resources", "Strings.resx");
 
-            // Act
-            var result = ResxAnalyzer
+            var resxAnalyzer = ResxAnalyzer
                 .ForResource(neutralResourceFile)
                 .WithCultures([GermanCultureInfo])
-                .WithChecks(checks => checks.Add(new CompletenessCheck()))
-                .Build()
-                .Analyze();
+                .Build();
+
+            // Act
+            var result = resxAnalyzer.Analyze<CompletenessCheck>();
 
             // Assert
             this.testOutputHelper.WriteLine(result.Report);
@@ -124,7 +124,6 @@ namespace System.Resources.Tests
             var resxAnalyzer = ResxAnalyzer
                 .ForResource(neutralResourceFile)
                 .WithLocalizedResource(GermanCultureInfo, Path.Combine(testDataDirectory.FullName, "Resources", "Strings.de.resx"))
-                .WithChecks(checks => checks.Add(new CompletenessCheck()))
                 .Build();
 
             // Act
@@ -136,7 +135,24 @@ namespace System.Resources.Tests
         }
 
         [Fact]
-        public void Build_ChecksAreNotConfigured_ThrowsInvalidOperationException()
+        public void Build_ChecksAreNotConfigured_UsesDefaultBuiltInChecks()
+        {
+            // Arrange
+            var testDataDirectory = TestDataPaths.GetTestDataDirectory();
+            var neutralResourceFile = Path.Combine(testDataDirectory.FullName, "Resources", "Strings.resx");
+
+            // Act
+            var analyzer = ResxAnalyzer
+                .ForResource(neutralResourceFile)
+                .Build();
+
+            // Assert
+            var result = analyzer.Analyze<CompletenessCheck>();
+            result.Checks.Should().ContainSingle(check => check.CheckName == nameof(CompletenessCheck));
+        }
+
+        [Fact]
+        public void Build_AllChecksAreCleared_ThrowsInvalidOperationException()
         {
             // Arrange
             var testDataDirectory = TestDataPaths.GetTestDataDirectory();
@@ -145,12 +161,13 @@ namespace System.Resources.Tests
             // Act
             var action = () => ResxAnalyzer
                 .ForResource(neutralResourceFile)
+                .WithChecks(checks => checks.Clear())
                 .Build();
 
             // Assert
             action.Should()
                 .Throw<InvalidOperationException>()
-                .WithMessage("At least one .resx check must be configured with WithChecks(...).");
+                .WithMessage("At least one .resx check must be registered.");
         }
 
         [Fact]
@@ -173,11 +190,9 @@ namespace System.Resources.Tests
             var deserializedOptions = JsonSerializer.Deserialize<ResxAnalyzerOptions>(json)!;
             var result = ResxAnalyzer
                 .ForOptions(deserializedOptions)
-                .WithChecks(checks => checks
-                    .Add(new CompletenessCheck())
-                    .Add(new UnusedKeysCheck(scan => scan
-                        .In(Path.Combine(testDataDirectory.FullName, "Source"))
-                        .IgnoreKeys("^IgnoredDynamic_"))))
+                .WithChecks(checks => checks.Add(new UnusedKeysCheck(scan => scan
+                    .In(Path.Combine(testDataDirectory.FullName, "Source"))
+                    .IgnoreKeys("^IgnoredDynamic_"))))
                 .Build()
                 .Analyze();
 
@@ -200,10 +215,6 @@ namespace System.Resources.Tests
             var result = ResxAnalyzer
                 .ForResource(Path.Combine(resourceDirectory.FullName, "Clean.resx"))
                 .WithLocalizedResource(GermanCultureInfo, Path.Combine(resourceDirectory.FullName, "Clean.de.resx"))
-                .WithChecks(checks => checks
-                    .Add(new CompletenessCheck())
-                    .Add(new PlaceholderConsistencyCheck())
-                    .Add(new NewlineValueCheck()))
                 .Build()
                 .Analyze();
 
@@ -308,7 +319,7 @@ namespace System.Resources.Tests
         }
 
         [Fact]
-        public void Analyze_NoCheckSelectorIsProvided_RunsAllConfiguredChecks()
+        public void Analyze_NoSelector_RunsDefaultBuiltInChecks()
         {
             // Arrange
             var analyzer = CreateAnalyzerForCleanResx();
@@ -322,6 +333,15 @@ namespace System.Resources.Tests
             result.Checks.Select(check => check.CheckName).Should().Equal(
                 nameof(CompletenessCheck),
                 nameof(PlaceholderConsistencyCheck),
+                nameof(DuplicateKeyCheck),
+                nameof(EmptyNeutralValueCheck),
+                nameof(SuspiciousSameAsNeutralCheck),
+                nameof(WhitespaceConsistencyCheck),
+                nameof(AcceleratorKeyCheck),
+                nameof(PunctuationConsistencyCheck),
+                nameof(OrphanLocalizedKeyCheck),
+                nameof(CultureFileCoverageCheck),
+                nameof(UnusedCultureFileCheck),
                 nameof(NewlineValueCheck));
         }
 
@@ -338,6 +358,7 @@ namespace System.Resources.Tests
                 .ForResource(Path.Combine(resourceDirectory.FullName, "Clean.resx"))
                 .WithLocalizedResource(GermanCultureInfo, Path.Combine(resourceDirectory.FullName, "Clean.de.resx"))
                 .WithChecks(checks => checks
+                    .Clear()
                     .Add(firstCheck)
                     .Add(secondCheck))
                 .Build();
@@ -367,7 +388,7 @@ namespace System.Resources.Tests
             // Assert
             action.Should()
                 .Throw<InvalidOperationException>()
-                .WithMessage("No configured check of type KeyMaxLengthCheck was found.");
+                .WithMessage("No registered check of type KeyMaxLengthCheck was found.");
         }
 
         [Fact]
@@ -382,7 +403,7 @@ namespace System.Resources.Tests
             // Assert
             action.Should()
                 .Throw<InvalidOperationException>()
-                .WithMessage("No configured check of type KeyMaxLengthCheck was found.");
+                .WithMessage("No registered check of type KeyMaxLengthCheck was found.");
         }
 
         [Fact]
@@ -397,7 +418,7 @@ namespace System.Resources.Tests
             // Assert
             action.Should()
                 .Throw<InvalidOperationException>()
-                .WithMessage("No configured check named KeyMaxLengthCheck was found.");
+                .WithMessage("No registered check named KeyMaxLengthCheck was found.");
         }
 
         [Fact]
@@ -410,14 +431,147 @@ namespace System.Resources.Tests
             // Act
             var action = () => ResxAnalyzer
                 .ForResource(Path.Combine(resourceDirectory.FullName, "Clean.resx"))
-                .WithChecks(checks => checks
-                    .Add(new CompletenessCheck())
-                    .Add(new CompletenessCheck()));
+                .WithChecks(checks => checks.Add(new CompletenessCheck()));
 
             // Assert
             action.Should()
                 .Throw<InvalidOperationException>()
                 .WithMessage("A check of type CompletenessCheck is already configured. Each check type can only be registered once.");
+        }
+
+        [Fact]
+        public void WithChecks_DefaultCheckIsRemoved_DoesNotRunRemovedCheck()
+        {
+            // Arrange
+            var testDataDirectory = TestDataPaths.GetTestDataDirectory();
+            var resourceDirectory = new DirectoryInfo(Path.Combine(testDataDirectory.FullName, "Resources"));
+
+            var analyzer = ResxAnalyzer
+                .ForResource(Path.Combine(resourceDirectory.FullName, "Clean.resx"))
+                .WithLocalizedResource(GermanCultureInfo, Path.Combine(resourceDirectory.FullName, "Clean.de.resx"))
+                .WithChecks(checks => checks.Remove<UnusedCultureFileCheck>())
+                .Build();
+
+            // Act
+            var result = analyzer.Analyze();
+
+            // Assert
+            result.Checks.Select(check => check.CheckName).Should().NotContain(nameof(UnusedCultureFileCheck));
+        }
+
+        [Fact]
+        public void WithChecks_CheckTypeIsRemoved_RemovesRegisteredCheck()
+        {
+            // Arrange
+            var testDataDirectory = TestDataPaths.GetTestDataDirectory();
+            var resourceDirectory = new DirectoryInfo(Path.Combine(testDataDirectory.FullName, "Resources"));
+
+            var analyzer = ResxAnalyzer
+                .ForResource(Path.Combine(resourceDirectory.FullName, "Clean.resx"))
+                .WithLocalizedResource(GermanCultureInfo, Path.Combine(resourceDirectory.FullName, "Clean.de.resx"))
+                .WithChecks(checks => checks.Remove(typeof(PunctuationConsistencyCheck)))
+                .Build();
+
+            // Act
+            var result = analyzer.Analyze();
+
+            // Assert
+            result.Checks.Select(check => check.CheckName).Should().NotContain(nameof(PunctuationConsistencyCheck));
+        }
+
+        [Fact]
+        public void WithChecks_CheckNameIsRemoved_RemovesRegisteredCheck()
+        {
+            // Arrange
+            var testDataDirectory = TestDataPaths.GetTestDataDirectory();
+            var resourceDirectory = new DirectoryInfo(Path.Combine(testDataDirectory.FullName, "Resources"));
+
+            var analyzer = ResxAnalyzer
+                .ForResource(Path.Combine(resourceDirectory.FullName, "Clean.resx"))
+                .WithLocalizedResource(GermanCultureInfo, Path.Combine(resourceDirectory.FullName, "Clean.de.resx"))
+                .WithChecks(checks => checks.Remove(nameof(WhitespaceConsistencyCheck)))
+                .Build();
+
+            // Act
+            var result = analyzer.Analyze();
+
+            // Assert
+            result.Checks.Select(check => check.CheckName).Should().NotContain(nameof(WhitespaceConsistencyCheck));
+        }
+
+        [Fact]
+        public void WithChecks_ConfigurableBuiltInCheckIsAdded_CanRunSelectedCheck()
+        {
+            // Arrange
+            var checksDirectory = TestDataPaths.GetChecksDirectory();
+
+            var analyzer = ResxAnalyzer
+                .ForResource(Path.Combine(checksDirectory.FullName, "KeyMaxLengthCheck.resx"))
+                .WithChecks(checks => checks.Add(new KeyMaxLengthCheck(10)))
+                .Build();
+
+            // Act
+            var result = analyzer.Analyze<KeyMaxLengthCheck>();
+
+            // Assert
+            this.testOutputHelper.WriteLine(result.Report);
+            result.Succeeded.Should().BeFalse();
+            result.Checks.Should().ContainSingle(check => check.CheckName == nameof(KeyMaxLengthCheck));
+            result.Report.Should().Contain("Following resource keys exceed 10 characters");
+        }
+
+        [Fact]
+        public void WithChecks_UnregisteredCheckIsRemoved_ThrowsInvalidOperationException()
+        {
+            // Arrange
+            var testDataDirectory = TestDataPaths.GetTestDataDirectory();
+            var resourceDirectory = new DirectoryInfo(Path.Combine(testDataDirectory.FullName, "Resources"));
+
+            // Act
+            var action = () => ResxAnalyzer
+                .ForResource(Path.Combine(resourceDirectory.FullName, "Clean.resx"))
+                .WithChecks(checks => checks.Remove<KeyMaxLengthCheck>());
+
+            // Assert
+            action.Should()
+                .Throw<InvalidOperationException>()
+                .WithMessage("No registered check of type KeyMaxLengthCheck was found.");
+        }
+
+        [Fact]
+        public void WithChecks_CheckNameIsEmpty_ThrowsArgumentException()
+        {
+            // Arrange
+            var testDataDirectory = TestDataPaths.GetTestDataDirectory();
+            var resourceDirectory = new DirectoryInfo(Path.Combine(testDataDirectory.FullName, "Resources"));
+
+            // Act
+            var action = () => ResxAnalyzer
+                .ForResource(Path.Combine(resourceDirectory.FullName, "Clean.resx"))
+                .WithChecks(checks => checks.Remove(" "));
+
+            // Assert
+            action.Should()
+                .Throw<ArgumentException>()
+                .WithMessage("Check name must not be empty. (Parameter 'checkName')");
+        }
+
+        [Fact]
+        public void WithChecks_CheckTypeDoesNotImplementIResxCheck_ThrowsArgumentException()
+        {
+            // Arrange
+            var testDataDirectory = TestDataPaths.GetTestDataDirectory();
+            var resourceDirectory = new DirectoryInfo(Path.Combine(testDataDirectory.FullName, "Resources"));
+
+            // Act
+            var action = () => ResxAnalyzer
+                .ForResource(Path.Combine(resourceDirectory.FullName, "Clean.resx"))
+                .WithChecks(checks => checks.Remove(typeof(string)));
+
+            // Assert
+            action.Should()
+                .Throw<ArgumentException>()
+                .WithMessage("Check type String must implement IResxCheck. (Parameter 'checkType')");
         }
 
         [Fact]
@@ -439,7 +593,7 @@ namespace System.Resources.Tests
         }
 
         [Fact]
-        public void Analyze_CustomCheckIsConfigured_RunsCustomCheck()
+        public void WithChecks_CheckIsClearedAndCustomCheckAdded_RunsOnlyCustomCheck()
         {
             // Arrange
             var testDataDirectory = TestDataPaths.GetTestDataDirectory();
@@ -449,7 +603,7 @@ namespace System.Resources.Tests
             var result = ResxAnalyzer
                 .ForResource(Path.Combine(resourceDirectory.FullName, "Clean.resx"))
                 .WithLocalizedResource(GermanCultureInfo, Path.Combine(resourceDirectory.FullName, "Clean.de.resx"))
-                .WithChecks(checks => checks.Add(new CustomFailingCheck()))
+                .WithChecks(checks => checks.Clear().Add(new CustomFailingCheck()))
                 .Build()
                 .Analyze();
 
@@ -471,10 +625,6 @@ namespace System.Resources.Tests
             return ResxAnalyzer
                 .ForResource(Path.Combine(resourceDirectory.FullName, "Clean.resx"))
                 .WithLocalizedResource(GermanCultureInfo, Path.Combine(resourceDirectory.FullName, "Clean.de.resx"))
-                .WithChecks(checks => checks
-                    .Add(new CompletenessCheck())
-                    .Add(new PlaceholderConsistencyCheck())
-                    .Add(new NewlineValueCheck()))
                 .Build();
         }
 
