@@ -3,7 +3,7 @@
 [![Downloads](https://img.shields.io/nuget/dt/ResxAnalyzer.svg)](https://www.nuget.org/packages/ResxAnalyzer)
 [![Buy Me a Coffee](https://img.shields.io/badge/support-buy%20me%20a%20coffee-FFDD00)](https://buymeacoffee.com/thomasgalliker)
 
-ResxAnalyzer is a small .NET library for validating `.resx` translation resources. It is designed for unit tests.
+ResxAnalyzer is a small .NET library for validating `.resx` translation resources. It is designed to find `.resx` files and run a selection of checks upon them. Read the quick start guide below to get an impression of the functionality delivered.
 
 ## Download and Install ResxAnalyzer
 This library is available on NuGet: https://www.nuget.org/packages/ResxAnalyzer/
@@ -23,17 +23,9 @@ ResxAnalyzer supports .NET Standard 2.1 and higher.
 
 ## Quick Start
 
-The analyzer returns a simple result:
-
-```csharp
-public sealed record ResxAnalysisResult(
-    bool Succeeded,
-    string Report,
-    IReadOnlyList<ResxCheckResult> Checks);
-```
-
-Tests can print `Report` to `ITestOutputHelper` and assert `Succeeded`.
-`ToString()` returns `Report`, so `Console.WriteLine(result)` is also useful.
+ResxAnalyzer is intended to be used from unit tests as a utility for finding and analyzing `.resx` files.
+It can run multiple checks all at once, or you can run individual checks in separate tests when you want more focused failures.
+Use one unit test for a complete resource validation suite, or a series of test cases to validate specific rules one by one.
 
 ```csharp
 using System.Resources;
@@ -70,6 +62,18 @@ public sealed class StringsTests
 ```
 
 At least one check must be configured with `WithChecks(...)`. The analyzer does not run hidden default checks.
+
+The analyzer returns a simple result:
+
+```csharp
+public sealed record ResxAnalysisResult(
+    bool Succeeded,
+    string Report,
+    IReadOnlyList<ResxCheckResult> Checks);
+```
+
+Tests can print `Report` to `ITestOutputHelper` and assert `Succeeded`.
+`ToString()` returns `Report`, so `Console.WriteLine(result)` is also useful.
 
 ## Available Checks
 
